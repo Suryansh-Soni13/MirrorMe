@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Login | TechNova Solutions</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="auth-wrapper">
+    <div class="card auth-card">
+        <div style="margin-bottom: 32px;">
+            <h1 style="color: var(--primary); font-size: 28px; margin-bottom: 8px;">TechNova Solutions</h1>
+            <p style="color: var(--text-muted); font-size: 14px;">Workforce Management Portal</p>
+        </div>
+
+        <form id="loginForm">
+            <div style="text-align: left; margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px;">Username</label>
+                <input type="text" id="username" placeholder="e.g. admin" required>
+            </div>
+            <div style="text-align: left; margin-bottom: 24px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px;">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Access Dashboard</button>
+
+            <div id="login-error" style="margin-top: 16px; color: #ef4444; font-size: 13px; display: none;">
+                <i class="fas fa-exclamation-circle"></i> Invalid identity credentials.
+            </div>
+        </form>
+
+        <p
+            style="margin-top: 40px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">
+            Protected by TechNova Cloud System
+        </p>
+    </div>
+
+    <!-- Script Integration -->
+    <script src="script.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            const users = Storage.getUsers();
+            const user = users.find(u => u.username === username && u.password === password);
+
+            if (user) {
+                // Set session
+                Auth.setUser(user);
+                // Redirect based on role
+                window.location.href = (user.role === 'admin' ? 'admin.html' : 'employee.html');
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+
+</html>

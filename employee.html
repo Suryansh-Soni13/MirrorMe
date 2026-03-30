@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Workplace | TechNova Solutions</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="toast-container"></div>
+
+    <div class="app-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span>TechNova Pulse</span>
+            </div>
+            <nav class="nav-links">
+                <a href="#" class="nav-item active" onclick="showSection('workplace')"><i
+                        class="fas fa-desktop"></i><span>Workplace</span></a>
+                <a href="#" class="nav-item" onclick="showSection('chat')"><i
+                        class="fas fa-comments"></i><span>Engagement HUB</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item" onclick="Auth.logout()" style="color: #ef4444;"><i
+                        class="fas fa-sign-out-alt"></i><span>Sign Out</span></a>
+            </div>
+        </aside>
+
+        <main class="main-view">
+            <header class="top-nav">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div class="mobile-toggle" onclick="UI.toggleSidebar()"><i class="fas fa-bars"></i></div>
+                    <div id="section-title" style="font-weight: 600; color: var(--text-muted);">Your's Workspace</div>
+                </div>
+                <div
+                    style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--border); padding-left: 20px;">
+                    <img id="user-avatar" src="https://ui-avatars.com/api/?name=User&background=2563eb&color=fff"
+                        style="width: 32px; height: 32px; border-radius: 50%;">
+                    <span id="user-name" style="font-weight: 600;">Loading identity...</span>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <section id="workplace" class="content-section">
+                    <div class="section-header">Attendance Punch System</div>
+
+                    <div style="max-width: 700px;">
+                        <div class="card"
+                            style="text-align: center; padding: 60px 40px; border: 2px solid var(--primary); box-shadow: 0 10px 30px rgba(37,99,235,0.1);">
+                            <div
+                                style="font-size: 13px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 24px;">
+                                Current Attendance Status</div>
+                            <div id="punch-timer"
+                                style="font-size: 64px; font-weight: 800; font-family: 'Inter'; letter-spacing: -0.05em; margin-bottom: 48px;">
+                                00:00:00</div>
+                            <div style="display: flex; gap: 16px; justify-content: center;">
+                                <button id="btnPunchIn" class="btn btn-primary"
+                                    style="padding: 14px 40px; font-size: 16px;" onclick="punchAction('in')"><i
+                                        class="fas fa-sign-in-alt"></i> Punch In</button>
+                                <button id="btnPunchOut" class="btn btn-danger"
+                                    style="display: none; padding: 14px 40px; font-size: 16px;"
+                                    onclick="punchAction('out')"><i class="fas fa-sign-out-alt"></i> Punch Out</button>
+                            </div>
+                        </div>
+
+                        <div class="card" style="padding: 0; overflow: hidden;">
+                            <div style="padding: 20px; border-bottom: 1px solid var(--border); font-weight: 700;">
+                                Employee Attendance Log</div>
+                            <div class="table-wrap" style="border: none;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Reference ID</th>
+                                            <th>Punch In Time</th>
+                                            <th>Punch Out Time</th>
+                                            <th>Total Duration</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="chat" class="content-section" style="display: none;">
+                    <div class="section-header">Internal Engagement HUB</div>
+                    <div class="chat-box" style="height: 600px; max-width: 1000px;">
+                        <div class="chat-aside">
+                            <div style="padding: 20px; font-weight: 700; border-bottom: 1px solid var(--border);">
+                                Workforce Peers</div>
+                            <div id="chat-peer-list" style="overflow-y: auto; flex: 1;"></div>
+                        </div>
+                        <div class="chat-main">
+                            <div
+                                style="padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: white;">
+                                <i class="fas fa-arrow-left mobile-back-btn" onclick="document.querySelector('.chat-box').classList.remove('show-main')"></i>
+                                <img src="https://ui-avatars.com/api/?name=Hub&background=2563eb&color=fff"
+                                    id="chat-target-avatar" style="width: 32px; height: 32px; border-radius: 50%;">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px;" id="chat-target-name">Select Target
+                                        Link</div>
+                                    <div style="font-size: 11px; color: var(--text-muted);" id="chat-target-status">
+                                        Select a peer to begin engagement</div>
+                                </div>
+                            </div>
+                            <div class="chat-messages" id="chat-messages" style="background: white;"></div>
+                            <div
+                                style="padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 12px; background: white;">
+                                <input type="text" id="chatInput" placeholder="Secure baseline message..."
+                                    style="margin: 0; flex: 1;" onkeypress="if(event.key === 'Enter') sendPeerMessage()">
+                                <button class="btn btn-primary" onclick="sendPeerMessage()"><i
+                                        class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        Auth.protect('staff');
+        const currentUser = Auth.getUser();
+        let timerInterval = null;
+
+        function refreshProfile() {
+            document.getElementById('user-name').innerText = currentUser.name;
+            const photo = currentUser.photo || `https://ui-avatars.com/api/?name=${currentUser.name}&background=2563eb&color=fff`;
+            document.getElementById('user-avatar').src = photo;
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+            const activeLink = document.querySelector(`[onclick="showSection('${id}')"]`);
+            if (activeLink) activeLink.classList.add('active');
+
+            if (id === 'workplace') renderHistory();
+            if (id === 'chat') renderPeerList();
+        }
+
+        function punchAction(type) {
+            const users = Storage.getUsers();
+            const uIdx = users.findIndex(u => u.username === currentUser.username);
+
+            if (type === 'in') {
+                users[uIdx].isWorking = true;
+                users[uIdx].currentSessionStart = new Date().toISOString();
+                UI.toast('Session cycle initiated.');
+            } else {
+                const startTime = new Date(users[uIdx].currentSessionStart);
+                const endTime = new Date();
+                const diffTime = Math.abs(endTime - startTime);
+                const h = Math.floor(diffTime / 3600000);
+                const m = Math.floor((diffTime % 3600000) / 60000);
+                const s = Math.floor((diffTime % 60000) / 1000);
+                const duration = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+                users[uIdx].isWorking = false;
+                users[uIdx].sessions.push({
+                    id: 'S-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
+                    start: users[uIdx].currentSessionStart,
+                    end: endTime.toISOString(),
+                    duration: duration
+                });
+                users[uIdx].currentSessionStart = null;
+                UI.toast('Cycle finalized and documented.');
+            }
+
+            Storage.set('technova_v2_users', users);
+            // Re-sync local storage to UI object and local memory
+            const updatedUser = users[uIdx];
+            Auth.setUser(updatedUser);
+
+            // Fast UI update without reload
+            renderHistory();
+            handleTimer();
+            if (!updatedUser.isWorking) {
+                if (timerInterval) clearInterval(timerInterval);
+                document.getElementById('punch-timer').innerText = '00:00:00';
+                document.getElementById('btnPunchIn').style.display = 'inline-flex';
+                document.getElementById('btnPunchOut').style.display = 'none';
+            }
+        }
+
+        function handleTimer() {
+            const users = Storage.getUsers();
+            const user = users.find(u => u.username === Auth.getUser().username);
+
+            if (timerInterval) clearInterval(timerInterval); // Reset any existing leak
+
+            if (user.isWorking && user.currentSessionStart) {
+                document.getElementById('btnPunchIn').style.display = 'none';
+                document.getElementById('btnPunchOut').style.display = 'inline-flex';
+
+                const start = new Date(user.currentSessionStart);
+                timerInterval = setInterval(() => {
+                    const diff = Math.abs(new Date() - start);
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    document.getElementById('punch-timer').innerText =
+                        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                }, 1000);
+            }
+        }
+
+        function renderHistory() {
+            const users = Storage.getUsers();
+            const user = users.find(u => u.username === currentUser.username);
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = user.sessions.map(s => `
+                <tr>
+                    <td style="font-family: monospace;">${s.id}</td>
+                    <td>${new Date(s.start).toLocaleString()}</td>
+                    <td>${new Date(s.end).toLocaleString()}</td>
+                    <td style="font-weight: 700; color: var(--primary);">${s.duration}</td>
+                </tr>
+            `).reverse().join('') || '<tr><td colspan="4" style="padding: 40px; text-align: center;">No execution history recorded.</td></tr>';
+        }
+
+        let selectedTarget = 'admin'; // Default to admin
+
+        function renderPeerList() {
+            const users = Storage.getUsers();
+            const list = document.getElementById('chat-peer-list');
+
+            // Add Admin to top
+            let items = [`
+                <div class="nav-item" style="margin: 4px 12px; cursor: pointer; color: var(--text-main); ${selectedTarget === 'admin' ? 'background: var(--primary-light); border-left: 3px solid var(--primary);' : ''}" onclick="selectTarget('admin')">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff" style="width: 24px; height: 24px; border-radius: 50%;">
+                    <span>Principal Admin</span>
+                </div>
+            `];
+
+            // Add Colleagues
+            users.filter(u => u.username !== currentUser.username && u.role !== 'admin').forEach(u => {
+                items.push(`
+                    <div class="nav-item" style="margin: 4px 12px; cursor: pointer; color: var(--text-main); ${selectedTarget === u.username ? 'background: var(--primary-light); border-left: 3px solid var(--primary);' : ''}" onclick="selectTarget('${u.username}')">
+                        <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + u.name}" style="width: 24px; height: 24px; border-radius: 50%;">
+                        <div style="flex: 1;">
+                            <div>${u.name}</div>
+                            <div style="font-size: 8px; color: ${u.isWorking ? '#10b981' : '#94a3b8'}; font-weight: 800;">${u.isWorking ? 'ONLINE' : 'OFFLINE'}</div>
+                        </div>
+                    </div>
+                `);
+            });
+
+            list.innerHTML = items.join('');
+        }
+
+        function selectTarget(username) {
+            selectedTarget = username;
+            document.querySelector('.chat-box').classList.add('show-main');
+            const users = Storage.getUsers();
+            if (username === 'admin') {
+                document.getElementById('chat-target-name').innerText = 'Principal Admin';
+                document.getElementById('chat-target-avatar').src = 'https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff';
+                document.getElementById('chat-target-status').innerText = 'High-Trust Management Channel';
+            } else {
+                const user = users.find(u => u.username === username);
+                document.getElementById('chat-target-name').innerText = user.name;
+                document.getElementById('chat-target-avatar').src = user.photo || `https://ui-avatars.com/api/?name=${user.name}`;
+                document.getElementById('chat-target-status').innerText = user.isWorking ? 'ONLINE: Peer Engagement Active' : 'STANDBY: Offline Tracking';
+            }
+            renderPeerList();
+            loadSupportMessages();
+        }
+
+        function loadSupportMessages() {
+            if (!selectedTarget) return;
+            let needsSave = false;
+            let allMessages = Storage.getMessages();
+            
+            const messages = allMessages.filter(m => {
+                const isRelevant = (m.from === currentUser.username && m.to === selectedTarget) || (m.from === selectedTarget && m.to === currentUser.username);
+                if (isRelevant && m.to === currentUser.username && !m.seen) {
+                    m.seen = true;
+                    needsSave = true;
+                }
+                return isRelevant;
+            });
+            
+            if (needsSave) Storage.set('technova_client_msgs', allMessages);
+            lastMsgCount = messages.length;
+            
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = messages.map(m => {
+                const isMe = m.from === currentUser.username;
+                return `<div class="msg-bubble ${isMe ? 'msg-me' : 'msg-them'}">${m.text}</div>`;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendPeerMessage() {
+            const input = document.getElementById('chatInput');
+            if (!input.value.trim() || !selectedTarget) return;
+            const messages = Storage.getMessages();
+            messages.push({ from: currentUser.username, to: selectedTarget, text: input.value, time: new Date().toISOString(), seen: false });
+            Storage.set('technova_client_msgs', messages);
+            input.value = '';
+            loadSupportMessages();
+        }
+
+        // Real-Time High-Speed Synchronization
+        let lastMsgCount = 0;
+        let globalHeartbeatCount = 0;
+        function chatHeartbeat() {
+            const allMessages = Storage.getMessages();
+            if (allMessages.length !== globalHeartbeatCount) {
+                globalHeartbeatCount = allMessages.length;
+                renderPeerList(); // Sync peers instantly
+            }
+
+            if (!selectedTarget) return;
+            const messages = allMessages.filter(m =>
+                (m.from === currentUser.username && m.to === selectedTarget) ||
+                (m.from === selectedTarget && m.to === currentUser.username)
+            );
+            if (messages.length !== lastMsgCount) {
+                loadSupportMessages();
+            }
+        }
+
+        window.addEventListener('storage', chatHeartbeat);
+        setInterval(chatHeartbeat, 1000); // 1-second sync heartbeat
+
+        // Exit Guard & Auto-Punch Mechanism
+        window.addEventListener('beforeunload', (e) => {
+            const users = Storage.getUsers();
+            const user = users.find(u => u.username === currentUser.username);
+            if (user && user.isWorking) {
+                e.preventDefault();
+                e.returnValue = 'Active Session Detected: Are you sure you want to exit without Punching Out?';
+            }
+        });
+
+        window.addEventListener('unload', () => {
+            const users = Storage.getUsers();
+            const uIdx = users.findIndex(u => u.username === currentUser.username);
+            if (uIdx !== -1 && users[uIdx].isWorking) {
+                // Force Auto-Punch Out on Tab Closure
+                const startTime = new Date(users[uIdx].currentSessionStart);
+                const endTime = new Date();
+                const diffTime = Math.abs(endTime - startTime);
+                const h = Math.floor(diffTime / 3600000);
+                const m = Math.floor((diffTime % 3600000) / 60000);
+                const s = Math.floor((diffTime % 60000) / 1000);
+                const duration = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+                users[uIdx].isWorking = false;
+                users[uIdx].sessions.push({
+                    id: 'AUTO-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
+                    start: users[uIdx].currentSessionStart,
+                    end: endTime.toISOString(),
+                    duration: duration
+                });
+                users[uIdx].currentSessionStart = null;
+                Storage.set('technova_v2_users', users);
+            }
+        });
+
+        refreshProfile();
+        handleTimer();
+        renderHistory();
+    </script>
+</body>
+
+</html>
