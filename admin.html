@@ -166,12 +166,9 @@
                                 </div>
                             </div>
                             <div class="chat-messages" id="chat-messages"></div>
-                            <div id="chat-input-area"
-                                style="padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 12px;">
-                                <input type="text" id="chatInput" placeholder="Secure message content..."
-                                    style="margin: 0; flex: 1;" onkeypress="if(event.key === 'Enter') sendMessage()">
-                                <button class="btn btn-primary" onclick="sendMessage()"><i
-                                        class="fas fa-paper-plane"></i></button>
+                            <div class="chat-input-bar" id="chat-input-area">
+                                <input type="text" id="chatInput" placeholder="Secure baseline message..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                                <button class="btn btn-primary" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
                             </div>
                         </div>
                     </div>
@@ -411,8 +408,13 @@
                 const messages = allMessages.filter(m => (m.to === selectedChatUser || m.from === selectedChatUser));
                 container.innerHTML = messages.map(m => {
                     const isMe = m.from === 'admin';
-                    const senderName = isMe ? 'ADMIN' : (m.from === selectedChatUser ? 'MEMBER' : `PEER (${m.from})`);
-                    return `<div class="msg-bubble ${isMe ? 'msg-me' : 'msg-them'}"><div style="font-size: 9px; opacity: 0.7; margin-bottom: 2px;">${senderName}</div>${m.text}</div>`;
+                    const time = new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return `
+                        <div class="msg-bubble ${isMe ? 'msg-me' : 'msg-them'}">
+                            <div style="font-size: 9px; opacity: 0.7; margin-bottom: 2px;">${isMe ? 'ADMIN' : m.from.toUpperCase()}</div>
+                            <div>${m.text}</div>
+                            <div class="msg-time">${time}</div>
+                        </div>`;
                 }).join('');
             }
             container.scrollTop = container.scrollHeight;

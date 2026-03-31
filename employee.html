@@ -107,13 +107,10 @@
                                         Select a peer to begin engagement</div>
                                 </div>
                             </div>
-                            <div class="chat-messages" id="chat-messages" style="background: white;"></div>
-                            <div
-                                style="padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 12px; background: white;">
-                                <input type="text" id="chatInput" placeholder="Secure baseline message..."
-                                    style="margin: 0; flex: 1;" onkeypress="if(event.key === 'Enter') sendPeerMessage()">
-                                <button class="btn btn-primary" onclick="sendPeerMessage()"><i
-                                        class="fas fa-paper-plane"></i></button>
+                            <div class="chat-messages" id="chat-messages"></div>
+                            <div class="chat-input-bar">
+                                <input type="text" id="chatInput" placeholder="Secure baseline message..." onkeypress="if(event.key === 'Enter') sendPeerMessage()">
+                                <button class="btn btn-primary" onclick="sendPeerMessage()"><i class="fas fa-paper-plane"></i></button>
                             </div>
                         </div>
                     </div>
@@ -287,7 +284,12 @@
             
             container.innerHTML = messages.map(m => {
                 const isMe = m.from === currentUser.username;
-                return `<div class="msg-bubble ${isMe ? 'msg-me' : 'msg-them'}">${m.text}</div>`;
+                const time = new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `
+                    <div class="msg-bubble ${isMe ? 'msg-me' : 'msg-them'}">
+                        <div>${m.text}</div>
+                        <div class="msg-time">${time}</div>
+                    </div>`;
             }).join('');
             container.scrollTop = container.scrollHeight;
         };
