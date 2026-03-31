@@ -111,7 +111,8 @@ body {
 
 input, select, textarea {
     width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-md);
-    font-family: inherit; font-size: 14px; outline: none; margin-bottom: 16px;
+    font-family: inherit; font-size: 16px; outline: none; margin-bottom: 16px;
+    background: white; color: var(--text-main);
 }
 input:focus { border-color: var(--primary); }
 
