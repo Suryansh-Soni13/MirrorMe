@@ -123,38 +123,52 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
+    <script type="module">
+        import { DB } from './db.js';
+
+        // Page Guard
         Auth.protect('staff');
-        const currentUser = Auth.getUser();
+        
+        // Session State
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
         let timerInterval = null;
+        let selectedTarget = 'admin';
+        let allUsers = [];
+        let allMessages = [];
 
-        function refreshProfile() {
-            document.getElementById('user-name').innerText = currentUser.name;
-            const photo = currentUser.photo || `https://ui-avatars.com/api/?name=${currentUser.name}&background=2563eb&color=fff`;
+        // Global functions for HTML
+        window.refreshProfile = () => {
+            const user = allUsers.find(u => u.username === currentUser.username) || currentUser;
+            document.getElementById('user-name').innerText = user.name;
+            const photo = user.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=2563eb&color=fff`;
             document.getElementById('user-avatar').src = photo;
-        }
+        };
 
-        function showSection(id) {
+        window.showSection = (id) => {
             document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
+            const section = document.getElementById(id);
+            if (section) section.style.display = 'block';
+
             document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
             const activeLink = document.querySelector(`[onclick="showSection('${id}')"]`);
             if (activeLink) activeLink.classList.add('active');
 
             if (id === 'workplace') renderHistory();
             if (id === 'chat') renderPeerList();
-        }
+        };
 
-        function punchAction(type) {
-            const users = Storage.getUsers();
-            const uIdx = users.findIndex(u => u.username === currentUser.username);
+        window.punchAction = async (type) => {
+            const user = allUsers.find(u => u.username === currentUser.username);
+            if (!user) return;
 
             if (type === 'in') {
-                users[uIdx].isWorking = true;
-                users[uIdx].currentSessionStart = new Date().toISOString();
+                await DB.updateUser(user.username, {
+                    isWorking: true,
+                    currentSessionStart: new Date().toISOString()
+                });
                 UI.toast('Session cycle initiated.');
             } else {
-                const startTime = new Date(users[uIdx].currentSessionStart);
+                const startTime = new Date(user.currentSessionStart);
                 const endTime = new Date();
                 const diffTime = Math.abs(endTime - startTime);
                 const h = Math.floor(diffTime / 3600000);
@@ -162,38 +176,28 @@
                 const s = Math.floor((diffTime % 60000) / 1000);
                 const duration = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 
-                users[uIdx].isWorking = false;
-                users[uIdx].sessions.push({
+                const sessions = user.sessions || [];
+                sessions.push({
                     id: 'S-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
-                    start: users[uIdx].currentSessionStart,
+                    start: user.currentSessionStart,
                     end: endTime.toISOString(),
                     duration: duration
                 });
-                users[uIdx].currentSessionStart = null;
+
+                await DB.updateUser(user.username, {
+                    isWorking: false,
+                    sessions: sessions,
+                    currentSessionStart: null
+                });
                 UI.toast('Cycle finalized and documented.');
             }
+        };
 
-            Storage.set('technova_v2_users', users);
-            // Re-sync local storage to UI object and local memory
-            const updatedUser = users[uIdx];
-            Auth.setUser(updatedUser);
+        const handleTimer = () => {
+            const user = allUsers.find(u => u.username === currentUser.username);
+            if (!user) return;
 
-            // Fast UI update without reload
-            renderHistory();
-            handleTimer();
-            if (!updatedUser.isWorking) {
-                if (timerInterval) clearInterval(timerInterval);
-                document.getElementById('punch-timer').innerText = '00:00:00';
-                document.getElementById('btnPunchIn').style.display = 'inline-flex';
-                document.getElementById('btnPunchOut').style.display = 'none';
-            }
-        }
-
-        function handleTimer() {
-            const users = Storage.getUsers();
-            const user = users.find(u => u.username === Auth.getUser().username);
-
-            if (timerInterval) clearInterval(timerInterval); // Reset any existing leak
+            if (timerInterval) clearInterval(timerInterval);
 
             if (user.isWorking && user.currentSessionStart) {
                 document.getElementById('btnPunchIn').style.display = 'none';
@@ -208,14 +212,18 @@
                     document.getElementById('punch-timer').innerText =
                         `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
                 }, 1000);
+            } else {
+                document.getElementById('btnPunchIn').style.display = 'inline-flex';
+                document.getElementById('btnPunchOut').style.display = 'none';
+                document.getElementById('punch-timer').innerText = '00:00:00';
             }
-        }
+        };
 
-        function renderHistory() {
-            const users = Storage.getUsers();
-            const user = users.find(u => u.username === currentUser.username);
+        const renderHistory = () => {
+            const user = allUsers.find(u => u.username === currentUser.username);
+            if (!user) return;
             const tbody = document.getElementById('historyBody');
-            tbody.innerHTML = user.sessions.map(s => `
+            tbody.innerHTML = (user.sessions || []).map(s => `
                 <tr>
                     <td style="font-family: monospace;">${s.id}</td>
                     <td>${new Date(s.start).toLocaleString()}</td>
@@ -223,15 +231,12 @@
                     <td style="font-weight: 700; color: var(--primary);">${s.duration}</td>
                 </tr>
             `).reverse().join('') || '<tr><td colspan="4" style="padding: 40px; text-align: center;">No execution history recorded.</td></tr>';
-        }
+        };
 
-        let selectedTarget = 'admin'; // Default to admin
-
-        function renderPeerList() {
-            const users = Storage.getUsers();
+        const renderPeerList = () => {
             const list = document.getElementById('chat-peer-list');
+            if (!list) return;
 
-            // Add Admin to top
             let items = [`
                 <div class="nav-item" style="margin: 4px 12px; cursor: pointer; color: var(--text-main); ${selectedTarget === 'admin' ? 'background: var(--primary-light); border-left: 3px solid var(--primary);' : ''}" onclick="selectTarget('admin')">
                     <img src="https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff" style="width: 24px; height: 24px; border-radius: 50%;">
@@ -239,11 +244,10 @@
                 </div>
             `];
 
-            // Add Colleagues
-            users.filter(u => u.username !== currentUser.username && u.role !== 'admin').forEach(u => {
+            allUsers.filter(u => u.username !== currentUser.username && u.role !== 'admin').forEach(u => {
                 items.push(`
                     <div class="nav-item" style="margin: 4px 12px; cursor: pointer; color: var(--text-main); ${selectedTarget === u.username ? 'background: var(--primary-light); border-left: 3px solid var(--primary);' : ''}" onclick="selectTarget('${u.username}')">
-                        <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + u.name}" style="width: 24px; height: 24px; border-radius: 50%;">
+                        <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(u.name)}" style="width: 24px; height: 24px; border-radius: 50%;">
                         <div style="flex: 1;">
                             <div>${u.name}</div>
                             <div style="font-size: 8px; color: ${u.isWorking ? '#10b981' : '#94a3b8'}; font-weight: 800;">${u.isWorking ? 'ONLINE' : 'OFFLINE'}</div>
@@ -251,124 +255,79 @@
                     </div>
                 `);
             });
-
             list.innerHTML = items.join('');
-        }
+        };
 
-        function selectTarget(username) {
+        window.selectTarget = async (username) => {
             selectedTarget = username;
             document.querySelector('.chat-box').classList.add('show-main');
-            const users = Storage.getUsers();
             if (username === 'admin') {
                 document.getElementById('chat-target-name').innerText = 'Principal Admin';
                 document.getElementById('chat-target-avatar').src = 'https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff';
                 document.getElementById('chat-target-status').innerText = 'High-Trust Management Channel';
             } else {
-                const user = users.find(u => u.username === username);
+                const user = allUsers.find(u => u.username === username);
                 document.getElementById('chat-target-name').innerText = user.name;
-                document.getElementById('chat-target-avatar').src = user.photo || `https://ui-avatars.com/api/?name=${user.name}`;
+                document.getElementById('chat-target-avatar').src = user.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`;
                 document.getElementById('chat-target-status').innerText = user.isWorking ? 'ONLINE: Peer Engagement Active' : 'STANDBY: Offline Tracking';
             }
+            await DB.markSeen(currentUser.username, username);
             renderPeerList();
             loadSupportMessages();
-        }
+        };
 
-        function loadSupportMessages() {
-            if (!selectedTarget) return;
-            let needsSave = false;
-            let allMessages = Storage.getMessages();
-            
-            const messages = allMessages.filter(m => {
-                const isRelevant = (m.from === currentUser.username && m.to === selectedTarget) || (m.from === selectedTarget && m.to === currentUser.username);
-                if (isRelevant && m.to === currentUser.username && !m.seen) {
-                    m.seen = true;
-                    needsSave = true;
-                }
-                return isRelevant;
-            });
-            
-            if (needsSave) Storage.set('technova_client_msgs', allMessages);
-            lastMsgCount = messages.length;
-            
+        const loadSupportMessages = () => {
             const container = document.getElementById('chat-messages');
+            if (!container || !selectedTarget) return;
+
+            const messages = allMessages.filter(m => 
+                (m.from === currentUser.username && m.to === selectedTarget) || 
+                (m.from === selectedTarget && m.to === currentUser.username)
+            );
+            
             container.innerHTML = messages.map(m => {
                 const isMe = m.from === currentUser.username;
                 return `<div class="msg-bubble ${isMe ? 'msg-me' : 'msg-them'}">${m.text}</div>`;
             }).join('');
             container.scrollTop = container.scrollHeight;
-        }
+        };
 
-        function sendPeerMessage() {
+        window.sendPeerMessage = async () => {
             const input = document.getElementById('chatInput');
             if (!input.value.trim() || !selectedTarget) return;
-            const messages = Storage.getMessages();
-            messages.push({ from: currentUser.username, to: selectedTarget, text: input.value, time: new Date().toISOString(), seen: false });
-            Storage.set('technova_client_msgs', messages);
+            await DB.sendMessage(currentUser.username, selectedTarget, input.value);
             input.value = '';
-            loadSupportMessages();
-        }
+        };
 
-        // Real-Time High-Speed Synchronization
-        let lastMsgCount = 0;
-        let globalHeartbeatCount = 0;
-        function chatHeartbeat() {
-            const allMessages = Storage.getMessages();
-            if (allMessages.length !== globalHeartbeatCount) {
-                globalHeartbeatCount = allMessages.length;
-                renderPeerList(); // Sync peers instantly
-            }
-
-            if (!selectedTarget) return;
-            const messages = allMessages.filter(m =>
-                (m.from === currentUser.username && m.to === selectedTarget) ||
-                (m.from === selectedTarget && m.to === currentUser.username)
-            );
-            if (messages.length !== lastMsgCount) {
-                loadSupportMessages();
-            }
-        }
-
-        window.addEventListener('storage', chatHeartbeat);
-        setInterval(chatHeartbeat, 1000); // 1-second sync heartbeat
-
-        // Exit Guard & Auto-Punch Mechanism
+        // Exit Guard
         window.addEventListener('beforeunload', (e) => {
-            const users = Storage.getUsers();
-            const user = users.find(u => u.username === currentUser.username);
+            const user = allUsers.find(u => u.username === currentUser.username);
             if (user && user.isWorking) {
                 e.preventDefault();
-                e.returnValue = 'Active Session Detected: Are you sure you want to exit without Punching Out?';
+                e.returnValue = 'Active Session Detected: Exit without Punching Out?';
             }
         });
 
-        window.addEventListener('unload', () => {
-            const users = Storage.getUsers();
-            const uIdx = users.findIndex(u => u.username === currentUser.username);
-            if (uIdx !== -1 && users[uIdx].isWorking) {
-                // Force Auto-Punch Out on Tab Closure
-                const startTime = new Date(users[uIdx].currentSessionStart);
-                const endTime = new Date();
-                const diffTime = Math.abs(endTime - startTime);
-                const h = Math.floor(diffTime / 3600000);
-                const m = Math.floor((diffTime % 3600000) / 60000);
-                const s = Math.floor((diffTime % 60000) / 1000);
-                const duration = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-
-                users[uIdx].isWorking = false;
-                users[uIdx].sessions.push({
-                    id: 'AUTO-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
-                    start: users[uIdx].currentSessionStart,
-                    end: endTime.toISOString(),
-                    duration: duration
-                });
-                users[uIdx].currentSessionStart = null;
-                Storage.set('technova_v2_users', users);
-            }
+        // Initialize Real-time
+        DB.onUsers((users) => {
+            allUsers = users;
+            // Auto-Sanitize legacy broken photos
+            users.forEach(u => {
+                if (u.photo && u.photo.startsWith(window.location.origin)) {
+                    DB.updateUser(u.username, { photo: '' });
+                }
+            });
+            refreshProfile();
+            handleTimer();
+            renderHistory();
+            renderPeerList();
         });
 
-        refreshProfile();
-        handleTimer();
-        renderHistory();
+        DB.onMessages((messages) => {
+            allMessages = messages;
+            loadSupportMessages();
+        });
+    </script>
     </script>
 </body>
 

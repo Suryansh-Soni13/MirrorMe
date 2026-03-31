@@ -152,7 +152,7 @@ td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 }
 .auth-card { width: 100%; max-width: 440px; padding: 48px; text-align: center; }
 
-/* Responsive Media Queries as requested */
+/* Responsive Media Queries - Enhanced Premium Pass */
 
 /* Desktop & Laptop Breakpoint */
 @media (max-width: 1024px) {
@@ -172,24 +172,41 @@ td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     .main-view { margin-left: 0; }
     .mobile-toggle { display: block; }
     .top-nav { padding: 0 16px; }
-    .content-body { padding: 24px 16px; }
+    .content-body { padding: 20px 16px; }
 }
 
-/* Mobile Breakpoint */
+/* Mobile Breakpoint Optimization */
 @media (max-width: 480px) {
-    .stats-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr; gap: 12px; }
     .btn { width: 100%; }
-    .card { padding: 20px; }
-    .auth-card { padding: 32px 20px; }
-    .top-nav { padding: 0 12px; }
+    .card { padding: 16px; }
     
-    /* Table Transformation to scrolling list */
-    .table-wrap table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* Login Fix - Ensure it never overflows */
+    .auth-wrapper { padding: 20px 0; align-items: flex-start; overflow-y: auto; }
+    .auth-card { 
+        width: 90% !important; 
+        max-width: 360px; 
+        padding: 32px 20px !important; 
+        margin: auto;
+    }
+    .auth-card h1 { font-size: 22px !important; }
+    
+    .top-nav { padding: 0 12px; }
+    .top-nav h2 { font-size: 14px; }
+    
+    /* Force table wrap scrolling */
+    .table-wrap { 
+        margin: 0 -16px; 
+        border-radius: 0; 
+        border-right: none; 
+        border-left: none; 
+    }
+    td, th { padding: 12px 10px; font-size: 12px; }
 }
 
 /* Mobile Chat Enhancements */
 @media (max-width: 768px) {
-    .chat-box { position: relative; overflow: hidden; }
+    .chat-box { position: relative; overflow: hidden; height: 60vh; }
     .chat-aside { width: 100% !important; transition: transform 0.3s ease; border-right: none; }
     .chat-main { 
         position: absolute; top: 0; left: 0; width: 100%; height: 100%; 

@@ -41,22 +41,35 @@
 
     <!-- Script Integration -->
     <script src="script.js"></script>
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+    <script type="module">
+        import { DB } from './db.js';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
+            const usernameInput = document.getElementById('username').value.trim();
+            const passwordInput = document.getElementById('password').value.trim();
 
-            const users = Storage.getUsers();
-            const user = users.find(u => u.username === username && u.password === password);
+            const errorMsg = document.getElementById('login-error');
+            errorMsg.style.display = 'none';
 
-            if (user) {
-                // Set session
-                Auth.setUser(user);
-                // Redirect based on role
-                window.location.href = (user.role === 'admin' ? 'admin.html' : 'employee.html');
-            } else {
-                document.getElementById('login-error').style.display = 'block';
+            try {
+                // Ensure admin exists on first use
+                await DB.initAdmin();
+                
+                const users = await DB.getUsers();
+                const user = users.find(u => u.username === usernameInput && u.password === passwordInput);
+
+                if (user) {
+                    // Set session
+                    sessionStorage.setItem('currentUser', JSON.stringify(user));
+                    // Redirect based on role
+                    window.location.href = (user.role === 'admin' ? 'admin.html' : 'employee.html');
+                } else {
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error("[Login Error]", error);
+                alert("Database Connection Error. Please verify your Firebase project config in db.js!");
             }
         });
     </script>

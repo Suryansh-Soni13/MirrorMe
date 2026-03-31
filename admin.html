@@ -259,13 +259,25 @@
 
     <!-- Script Entry -->
     <script src="script.js"></script>
-    <script>
-        Auth.protect('admin');
-        let selectedChatUser = null;
+    <script type="module">
+        import { DB } from './db.js';
 
-        function showSection(id) {
+        // Page Guard
+        Auth.protect('admin');
+
+        // Global State
+        let selectedChatUser = null;
+        let isGlobalIntercept = false;
+        let lastMsgCount = 0;
+        let allUsers = [];
+        let allMessages = [];
+
+        // Attach functions to window for HTML onclick handlers
+        window.showSection = (id) => {
             document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
+            const section = document.getElementById(id);
+            if (section) section.style.display = 'block';
+            
             document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
             const activeLink = document.querySelector(`[onclick="showSection('${id}')"]`);
             if (activeLink) activeLink.classList.add('active');
@@ -274,15 +286,15 @@
             if (id === 'reports') renderReports();
             if (id === 'chat') renderChatList();
             if (id === 'dashboard') updateStats();
-        }
+        };
 
-        function updateStats() {
-            const users = Storage.getUsers().filter(u => u.role !== 'admin');
-            document.getElementById('stat-total-emp').innerText = users.length;
-            document.getElementById('stat-active-now').innerText = users.filter(u => u.isWorking).length;
-        }
+        const updateStats = () => {
+            const employees = allUsers.filter(u => u.role !== 'admin');
+            document.getElementById('stat-total-emp').innerText = employees.length;
+            document.getElementById('stat-active-now').innerText = employees.filter(u => u.isWorking).length;
+        };
 
-        function openAddModal() {
+        window.openAddModal = () => {
             document.getElementById('modal-title').innerText = 'Provision Talent Record';
             document.getElementById('edit-mode').value = 'add';
             document.getElementById('employeeForm').reset();
@@ -290,15 +302,15 @@
             document.getElementById('photo-preview').style.display = 'none';
             document.getElementById('photo-preview').querySelector('img').src = '';
             UI.openModal('employeeModal');
-        }
+        };
 
-        function renderEmployees() {
-            const users = Storage.getUsers().filter(u => u.role !== 'admin');
+        const renderEmployees = () => {
+            const employees = allUsers.filter(u => u.role !== 'admin');
             const tbody = document.getElementById('empTableBody');
-            tbody.innerHTML = users.map(u => `
+            tbody.innerHTML = employees.map(u => `
                 <tr>
                     <td style="display: flex; align-items: center; gap: 12px; font-weight: 600;">
-                        <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + u.name}" style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9;">
+                        <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(u.name)}" style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9;">
                         ${u.name}
                     </td>
                     <td>${u.role} | <span style="background: ${u.isWorking ? '#10b981' : '#94a3b8'}; color: white; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 800;">${u.isWorking ? 'ONLINE' : 'OFFLINE'}</span></td>
@@ -309,10 +321,10 @@
                     </td>
                 </tr>
             `).join('') || '<tr><td colspan="4" style="padding: 40px; text-align: center; color: var(--text-muted);">No talents found.</td></tr>';
-        }
+        };
 
-        function editEmployee(username) {
-            const user = Storage.getUsers().find(u => u.username === username);
+        window.editEmployee = (username) => {
+            const user = allUsers.find(u => u.username === username);
             if (!user) return;
             document.getElementById('modal-title').innerText = 'Re-Provision Access Key';
             document.getElementById('edit-mode').value = 'edit';
@@ -320,7 +332,7 @@
             document.getElementById('emp-name').value = user.name;
             document.getElementById('emp-username').value = user.username;
             document.getElementById('emp-role').value = user.role;
-            document.getElementById('emp-joined-at').value = user.joinedAt.split('T')[0];
+            document.getElementById('emp-joined-at').value = (user.joinedAt || "").split('T')[0];
             if (user.photo) {
                 document.getElementById('photo-preview').style.display = 'block';
                 document.getElementById('photo-preview').querySelector('img').src = user.photo;
@@ -329,77 +341,27 @@
                 document.getElementById('photo-preview').querySelector('img').src = '';
             }
             UI.openModal('employeeModal');
-        }
+        };
 
-        function deleteEmployee(username) {
+        window.deleteEmployee = async (username) => {
             if (confirm(`Confirm data erasure for ID: ${username}?`)) {
-                const users = Storage.getUsers().filter(u => u.username !== username);
-                Storage.set('technova_v2_users', users);
-                renderEmployees();
+                await DB.deleteUser(username);
                 UI.toast('Talent record purged.');
             }
-        }
+        };
 
-        document.getElementById('emp-photo').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    document.getElementById('photo-preview').style.display = 'block';
-                    document.getElementById('photo-preview').querySelector('img').src = ev.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        document.getElementById('employeeForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const editMode = document.getElementById('edit-mode').value === 'edit';
-            const originalUsername = document.getElementById('target-username').value;
-            const users = Storage.getUsers();
-
-            const userData = {
-                name: document.getElementById('emp-name').value,
-                username: document.getElementById('emp-username').value,
-                role: document.getElementById('emp-role').value,
-                photo: document.getElementById('photo-preview').querySelector('img').src || '',
-                joinedAt: document.getElementById('emp-joined-at').value
-            };
-
-            const passInput = document.getElementById('emp-password').value;
-            if (passInput) userData.password = passInput;
-
-            if (editMode) {
-                const index = users.findIndex(u => u.username === originalUsername);
-                users[index] = { ...users[index], ...userData };
-            } else {
-                if (users.find(u => u.username === userData.username)) { UI.toast('ID unavailable.', 'danger'); return; }
-                users.push({ ...userData, isWorking: false, sessions: [], joinedAt: new Date().toISOString() });
-            }
-
-            Storage.set('technova_v2_users', users);
-            UI.toast('Access authorized.');
-            UI.closeModal('employeeModal');
-            document.getElementById('employeeForm').reset();
-            document.getElementById('photo-preview').style.display = 'none';
-            renderEmployees();
-        });
-
-        // Chat Admin logic
-        function renderChatList() {
-            const users = Storage.getUsers().filter(u => u.role !== 'admin');
+        const renderChatList = () => {
+            const employees = allUsers.filter(u => u.role !== 'admin');
             const list = document.getElementById('chat-user-list');
-            list.innerHTML = users.map(u => `
+            list.innerHTML = employees.map(u => `
                 <div class="nav-item" style="margin: 4px 12px; cursor: pointer; color: var(--text-main); ${selectedChatUser === u.username ? 'background: var(--primary-light); border-left: 3px solid var(--primary);' : ''}" onclick="selectChat('${u.username}')">
                     <img src="https://ui-avatars.com/api/?name=${u.name}" style="width: 24px; height: 24px; border-radius: 50%;">
                     <span>${u.name}</span>
                 </div>
             `).join('') || '<div style="padding: 20px; font-size: 12px;">No active links.</div>';
-        }
+        };
 
-        let isGlobalIntercept = false;
-
-        function showGlobalIntercept() {
+        window.showGlobalIntercept = () => {
             isGlobalIntercept = true;
             selectedChatUser = null;
             document.querySelector('.chat-box').classList.add('show-main');
@@ -411,30 +373,31 @@
             document.getElementById('chat-input-area').style.display = 'none';
             renderChatList();
             loadMessages();
-        }
+        };
 
-        function selectChat(username) {
+        window.selectChat = async (username) => {
             isGlobalIntercept = false;
             selectedChatUser = username;
             document.querySelector('.chat-box').classList.add('show-main');
-            const user = Storage.getUsers().find(u => u.username === username);
+            const user = allUsers.find(u => u.username === username);
             document.getElementById('chat-active-name').innerText = user.name;
-            document.getElementById('chat-active-avatar').src = user.photo || `https://ui-avatars.com/api/?name=${user.name}`;
+            document.getElementById('chat-active-avatar').src = user.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`;
             document.getElementById('chat-active-status').innerText = user.isWorking ? 'ONLINE: High-Trust Link Established' : 'STANDBY: Offline Tracking Active';
             document.getElementById('btnSaveChat').style.display = 'inline-flex';
             document.getElementById('btnSaveChat').innerHTML = '<i class="fas fa-save"></i> Save As Note';
             document.getElementById('chat-input-area').style.display = 'flex';
+            
+            await DB.markSeen('admin', username);
             renderChatList();
             loadMessages();
-        }
+        };
 
-        function loadMessages() {
+        const loadMessages = () => {
             const container = document.getElementById('chat-messages');
+            if (!container) return;
 
             if (isGlobalIntercept) {
-                // Show ALL peer-to-peer messages
-                const messages = Storage.getMessages().filter(m => m.from !== 'admin' && m.to !== 'admin');
-                lastMsgCount = messages.length;
+                const messages = allMessages.filter(m => m.from !== 'admin' && m.to !== 'admin');
                 container.innerHTML = messages.map(m => `
                     <div class="msg-bubble msg-them" style="width: 100%; max-width: 100%; border-radius: 4px; background: #fff;">
                         <span style="font-weight: 800; color: var(--primary); font-size: 10px;">${m.from.toUpperCase()}</span> 
@@ -444,23 +407,8 @@
                         <div style="font-size: 8px; opacity: 0.5; text-align: right;">${new Date(m.time).toLocaleTimeString()}</div>
                     </div>
                 `).join('') || '<div style="padding: 40px; text-align: center; color: var(--text-muted);">No peer transactions documented.</div>';
-            } else {
-                if (!selectedChatUser) return;
-                let needsSave = false;
-                let allMessages = Storage.getMessages();
-                
-                const messages = allMessages.filter(m => {
-                    const isRelevant = (m.to === selectedChatUser || m.from === selectedChatUser);
-                    if (isRelevant && m.to === 'admin' && !m.seen) {
-                        m.seen = true;
-                        needsSave = true;
-                    }
-                    return isRelevant;
-                });
-                
-                if (needsSave) Storage.set('technova_client_msgs', allMessages);
-                lastMsgCount = messages.length;
-                
+            } else if (selectedChatUser) {
+                const messages = allMessages.filter(m => (m.to === selectedChatUser || m.from === selectedChatUser));
                 container.innerHTML = messages.map(m => {
                     const isMe = m.from === 'admin';
                     const senderName = isMe ? 'ADMIN' : (m.from === selectedChatUser ? 'MEMBER' : `PEER (${m.from})`);
@@ -468,99 +416,31 @@
                 }).join('');
             }
             container.scrollTop = container.scrollHeight;
-        }
+        };
 
-        function saveChatToNote() {
-            let content = '';
-            let filename = '';
-
-            if (isGlobalIntercept) {
-                const messages = Storage.getMessages().filter(m => m.from !== 'admin' && m.to !== 'admin');
-                content = `TechNova Global Communication Intercept Log\n`;
-                content += `Status: Confidential Internal Audit\n`;
-                content += `Generated At: ${new Date().toLocaleString()}\n`;
-                content += `--------------------------------------------------\n\n`;
-                messages.forEach(m => {
-                    content += `[${new Date(m.time).toLocaleString()}] ${m.from.toUpperCase()} -> ${m.to.toUpperCase()}: ${m.text}\n`;
-                });
-                filename = `GLOBAL_AUDIT_${new Date().toISOString().split('T')[0]}.txt`;
-            } else {
-                if (!selectedChatUser) return;
-                const user = Storage.getUsers().find(u => u.username === selectedChatUser);
-                const messages = Storage.getMessages().filter(m => (m.to === selectedChatUser || m.from === selectedChatUser));
-                content = `TechNova Workforce Chat Archive\n`;
-                content += `Member Identity: ${user.name} (${user.username})\n`;
-                content += `Generated At: ${new Date().toLocaleString()}\n`;
-                content += `--------------------------------------------------\n\n`;
-                messages.forEach(m => {
-                    content += `[${new Date(m.time).toLocaleTimeString()}] ${m.from.toUpperCase()}: ${m.text}\n`;
-                });
-                filename = `CONV_${selectedChatUser}_${new Date().toISOString().split('T')[0]}.txt`;
-            }
-
-            const blob = new Blob([content], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            link.click();
-            URL.revokeObjectURL(url);
-            UI.toast('Audit Log saved to Notepad.');
-        }
-
-        function sendMessage() {
+        window.sendMessage = async () => {
             const input = document.getElementById('chatInput');
             if (!input.value.trim() || !selectedChatUser) return;
-            const messages = Storage.getMessages();
-            messages.push({ from: 'admin', to: selectedChatUser, text: input.value, time: new Date().toISOString(), seen: false });
-            Storage.set('technova_client_msgs', messages);
+            await DB.sendMessage('admin', selectedChatUser, input.value);
             input.value = '';
-            loadMessages();
-        }
+        };
 
-        function renderReports() {
-            const users = Storage.getUsers().filter(u => u.role !== 'admin');
+        const renderReports = () => {
+            const employees = allUsers.filter(u => u.role !== 'admin');
             const tbody = document.getElementById('reportTableBody');
             let rows = [];
-            users.forEach(u => {
-                u.sessions.forEach(s => {
+            employees.forEach(u => {
+                (u.sessions || []).forEach(s => {
                     rows.push(`<tr><td>${u.name}</td><td>${new Date(s.start).toLocaleString()}</td><td>${s.end ? new Date(s.end).toLocaleString() : '...'}</td><td>${s.duration || '00:00:00'}</td></tr>`);
                 });
             });
             tbody.innerHTML = rows.reverse().join('') || '<tr><td colspan="4" style="padding: 40px; text-align: center;">No mission cycles documented.</td></tr>';
-        }
+        };
 
-        // Real-Time High-Speed Synchronization
-        let lastMsgCount = 0;
-        let globalHeartbeatCount = 0;
-        function chatHeartbeat() {
-            const allMessages = Storage.getMessages();
-            if (allMessages.length !== globalHeartbeatCount) {
-                globalHeartbeatCount = allMessages.length;
-                renderChatList(); // Sync sidebar dynamically
-            }
-
-            let messages = [];
-            if (isGlobalIntercept) {
-                messages = allMessages.filter(m => m.from !== 'admin' && m.to !== 'admin');
-            } else {
-                if (!selectedChatUser) return;
-                messages = allMessages.filter(m => (m.to === selectedChatUser || m.from === selectedChatUser));
-            }
-
-            if (messages.length !== lastMsgCount) {
-                loadMessages();
-            }
-        }
-
-        window.addEventListener('storage', chatHeartbeat);
-        setInterval(chatHeartbeat, 1000); // 1-second ultra-high-speed sync
-
-        function verifyAndDownload() {
+        window.verifyAndDownload = () => {
             const pass = document.getElementById('authPassInput').value;
-            const admin = Storage.getUsers().find(u => u.role === 'admin');
-
-            if (pass === admin.password) {
+            const admin = allUsers.find(u => u.role === 'admin');
+            if (admin && pass === admin.password) {
                 UI.toast('Export Authorized.');
                 UI.closeModal('securityModal');
                 document.getElementById('authPassInput').value = '';
@@ -568,29 +448,19 @@
             } else {
                 UI.toast('Export Unauthorized: Invalid Password.', 'danger');
             }
-        }
+        };
 
-        function triggerExport() {
+        const triggerExport = () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            const users = Storage.getUsers().filter(u => u.role !== 'admin');
-
-            // PDF Branding Header
+            const employees = allUsers.filter(u => u.role !== 'admin');
             doc.setFontSize(22);
             doc.setTextColor(37, 99, 235);
             doc.text('TechNova Workforce Sheet', 14, 20);
             doc.setFontSize(10);
             doc.setTextColor(100);
             doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
-
-            const tableData = users.map(u => [
-                u.name,
-                u.role,
-                u.username,
-                u.sessions.length,
-                new Date(u.joinedAt).toLocaleDateString()
-            ]);
-
+            const tableData = employees.map(u => [u.name, u.role, u.username, (u.sessions||[]).length, new Date(u.joinedAt || Date.now()).toLocaleDateString()]);
             doc.autoTable({
                 startY: 35,
                 head: [['Full Name', 'Role', 'Username', 'Attendance', 'Joined Date']],
@@ -598,11 +468,56 @@
                 headStyles: { fillColor: [37, 99, 235] },
                 alternateRowStyles: { fillColor: [248, 250, 252] }
             });
-
             doc.save(`TNS_Workforce_${new Date().toISOString().split('T')[0]}.pdf`);
-        }
+        };
 
-        updateStats();
+        // Form Submit
+        document.getElementById('employeeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editMode = document.getElementById('edit-mode').value === 'edit';
+            const originalUsername = document.getElementById('target-username').value;
+            const photoPreview = document.getElementById('photo-preview');
+            
+            const userData = {
+                name: document.getElementById('emp-name').value,
+                username: document.getElementById('emp-username').value,
+                role: document.getElementById('emp-role').value,
+                photo: (photoPreview.style.display === 'block') ? photoPreview.querySelector('img').src : '',
+                joinedAt: document.getElementById('emp-joined-at').value
+            };
+            const passInput = document.getElementById('emp-password').value;
+            if (passInput) userData.password = passInput;
+
+            if (editMode) {
+                await DB.updateUser(originalUsername, userData);
+            } else {
+                if (allUsers.find(u => u.username === userData.username)) { UI.toast('ID unavailable.', 'danger'); return; }
+                await DB.createUser(userData);
+            }
+            UI.toast('Access authorized.');
+            UI.closeModal('employeeModal');
+            document.getElementById('employeeForm').reset();
+        });
+
+        // Initialize Real-time Listeners
+        DB.onUsers((users) => {
+            allUsers = users;
+            // Auto-Sanitize legacy broken photos from local-origin URLs
+            users.forEach(u => {
+                if (u.photo && u.photo.startsWith(window.location.origin)) {
+                    DB.updateUser(u.username, { photo: '' });
+                }
+            });
+            updateStats();
+            renderEmployees();
+            renderReports();
+            renderChatList();
+        });
+
+        DB.onMessages((messages) => {
+            allMessages = messages;
+            loadMessages();
+        });
     </script>
 </body>
 

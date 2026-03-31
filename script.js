@@ -47,14 +47,14 @@ const Auth = {
     setUser: (user) => sessionStorage.setItem('currentUser', JSON.stringify(user)),
     logout: () => {
         sessionStorage.removeItem('currentUser');
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     },
 
     // Page guarding and session verification
     protect: (expectedRole) => {
         const user = Auth.getUser();
         if (!user) {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
             return;
         }
 
