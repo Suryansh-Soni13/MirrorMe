@@ -209,9 +209,9 @@ td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     /* Login Fix - Ensure it never overflows */
     .auth-wrapper { padding: 20px 0; align-items: flex-start; overflow-y: auto; }
     .auth-card { 
-        width: 90% !important; 
+        width: 92% !important; 
         max-width: 360px; 
-        padding: 32px 20px !important; 
+        padding: 40px 24px !important; 
         margin: auto;
     }
     .auth-card h1 { font-size: 22px !important; }
@@ -232,22 +232,23 @@ td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     table { width: auto; min-width: 100%; white-space: nowrap; }
     td, th { padding: 12px 10px; font-size: 11px; }
 
-    /* Chat Input Fix */
-    .chat-main .btn { width: auto !important; padding: 10px 15px; }
-    #chatInput { flex: 1; min-width: 0; margin-bottom: 0; }
+    /* Modern Chat Bar Fix for Mobile */
+    .chat-input-bar { padding: 8px 12px; gap: 8px; background: white; }
+    .chat-main .btn { width: 44px !important; height: 44px; border-radius: 50% !important; padding: 0 !important; flex-shrink: 0; }
+    #chatInput { flex: 1; min-width: 0; margin-bottom: 0; border-radius: 22px; background: #f0f2f5; border: none; padding: 10px 20px; }
 }
 
-/* Mobile Chat Enhancements */
+/* Mobile Chat Enhancements - Use SVH for modern mobile browsers */
 @media (max-width: 768px) {
-    .chat-box { position: relative; overflow: hidden; height: 65vh; max-height: 500px; }
-    .chat-aside { width: 100% !important; transition: transform 0.3s ease; border-right: none; }
+    .chat-box { position: relative; overflow: hidden; height: 75vh; height: 75dvh; max-height: 550px; }
+    .chat-aside { width: 100% !important; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-right: none; }
     .chat-main { 
         position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-        transform: translateX(100%); transition: transform 0.3s ease; 
+        transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
         z-index: 10; background: white; 
     }
     .chat-box.show-main .chat-aside { transform: translateX(-100%); }
     .chat-box.show-main .chat-main { transform: translateX(0); }
     .mobile-back-btn { display: block !important; }
 }
-.mobile-back-btn { display: none; padding: 8px; margin-right: 8px; cursor: pointer; color: var(--primary); font-size: 18px; }
+.mobile-back-btn { display: none; padding: 8px; margin-right: 12px; cursor: pointer; color: var(--primary); font-size: 18px; }
