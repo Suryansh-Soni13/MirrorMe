@@ -1,45 +1,5 @@
 /** TNS Simplified SaaS Portal - Core Logic Engine **/
-
-const Storage = {
-    get: (key) => JSON.parse(localStorage.getItem(key)),
-    set: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
-    
-    // Initialize default admin
-    init: () => {
-        const users = Storage.getUsers();
-        // Force inject admin if missing from list
-        if (!users.find(u => u.role === 'admin')) {
-            users.push({
-                id: 'ADM-001',
-                username: 'admin',
-                password: 'admin123',
-                name: 'Principal Admin',
-                role: 'admin',
-                status: 'active',
-                sessions: [],
-                joinedAt: new Date().toISOString()
-            });
-            Storage.set('technova_v2_users', users);
-        }
-        if (!localStorage.getItem('technova_client_msgs')) {
-            Storage.set('technova_client_msgs', []);
-        }
-    },
-
-    getUsers: () => Storage.get('technova_v2_users') || [],
-    getMessages: () => Storage.get('technova_client_msgs') || [],
-    
-    updateUser: (username, updatedData) => {
-        const users = Storage.getUsers();
-        const index = users.findIndex(u => u.username === username);
-        if (index !== -1) {
-            users[index] = { ...users[index], ...updatedData };
-            Storage.set('technova_v2_users', users);
-            return true;
-        }
-        return false;
-    }
-};
+// Local storage falls back to Firebase via db.js
 
 const Auth = {
     // Current session
@@ -112,5 +72,4 @@ document.addEventListener('mousedown', (e) => {
     }
 });
 
-// Run Initializer
-Storage.init();
+// Initializer - Removed legacy storage init

@@ -156,8 +156,10 @@ td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 /* Modal Overlay */
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-    display: none; align-items: center; justify-content: center; z-index: 2000;
+    display: none; align-items: flex-start; justify-content: center; z-index: 2000;
+    overflow-y: auto; padding: 40px 20px;
 }
+.modal-overlay .card { margin: auto; }
 
 /* Toast Notification */
 #toast-container { position: fixed; top: 24px; right: 24px; z-index: 3000; }
@@ -204,7 +206,7 @@ td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     
     /* Only make major action buttons full width, not icon buttons */
     .btn:not(.chat-main .btn) { width: 100%; }
-    .card { padding: 16px; }
+    .card { padding: 16px !important; }
     
     /* Login Fix - Ensure it never overflows */
     .auth-wrapper { padding: 20px 0; align-items: flex-start; overflow-y: auto; }
@@ -252,3 +254,52 @@ td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     .mobile-back-btn { display: block !important; }
 }
 .mobile-back-btn { display: none; padding: 8px; margin-right: 12px; cursor: pointer; color: var(--primary); font-size: 18px; }
+
+/* Profile Image Handling — Absolute No-Cutting Guarantee */
+.profile-img {
+    width: 44px; /* Slightly larger for easier viewing */
+    height: 44px;
+    border-radius: 6px; 
+    object-fit: contain; /* GUARANTEED: 100% of the photo is visible */
+    object-position: center;
+    background: #ffffff; /* Clean background for non-square photos */
+    border: 1px solid #e2e8f0;
+    padding: 2px; /* Small inner margin so head doesn't touch the edge */
+    flex-shrink: 0;
+    display: block;
+    transition: all 0.2s ease;
+}
+
+.profile-img:hover {
+    transform: scale(1.2);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.profile-img-lg {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+}
+
+.profile-img-xl {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+}
+
+/* Responsive Modal Grids */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 600px) {
+    .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .grid-2 > div {
+        grid-column: span 1 !important;
+    }
+}

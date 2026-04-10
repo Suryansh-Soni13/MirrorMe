@@ -6,10 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Hub | TechNova Solutions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.4">
     <!-- Document Generation CDNs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Firebase Core & Firestore (Compat Versions) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="db.js"></script>
+    <script src="script.js"></script>
 </head>
 
 <body>
@@ -19,15 +25,17 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <span>TechNova Admin</span>
+                <span>TechNova Solutions</span>
             </div>
             <nav class="nav-links">
                 <a href="#" class="nav-item active" onclick="showSection('dashboard')"><i
                         class="fas fa-chart-line"></i><span>Dashboard</span></a>
-                <a href="#" class="nav-item" onclick="showSection('employees')"><i
-                        class="fas fa-users"></i><span>Employees</span></a>
+                <a href="#" class="nav-item" onclick="showSection('talents')"><i
+                        class="fas fa-users"></i><span>Talent Hub</span></a>
+                <a href="#" class="nav-item" onclick="showSection('projects')"><i
+                        class="fas fa-tasks"></i><span>Mission Tracker</span></a>
                 <a href="#" class="nav-item" onclick="showSection('reports')"><i
-                        class="fas fa-file-alt"></i><span>Reports</span></a>
+                        class="fas fa-chart-line"></i><span>Execution Reports</span></a>
                 <a href="#" class="nav-item" onclick="showSection('chat')"><i
                         class="fas fa-comments"></i><span>Chat</span></a>
             </nav>
@@ -42,8 +50,7 @@
             <header class="top-nav">
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <div class="mobile-toggle" onclick="UI.toggleSidebar()"><i class="fas fa-bars"></i></div>
-                    <div id="section-title" style="font-weight: 600; color: var(--text-muted);"> TechNova Dashboard
-                    </div>
+                    <div id="section-title" style="font-weight: 600; color: var(--text-muted);">TechNova Solutions Management</div>
                 </div>
                 <div
                     style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--border); padding-left: 20px;">
@@ -71,33 +78,27 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
                         <div class="card">
                             <h3 style="margin-bottom: 24px;">Recent System Activity</h3>
-                            <div id="activity-feed" style="font-size: 13px; color: var(--text-muted);">No logs
-                                documented in current session.</div>
+                            <div id="activity-feed" style="font-size: 13px; color: var(--text-muted);">No logs documented in current session.</div>
                         </div>
                         <div class="card">
                             <h3 style="margin-bottom: 24px;">Quick Shortcuts</h3>
                             <div style="display: flex; flex-direction: column; gap: 12px;">
                                 <button class="btn btn-outline" style="justify-content: flex-start;"
-                                    onclick="showSection('employees')"><i class="fas fa-user-plus"></i> Management
-                                    Panel</button>
+                                    onclick="showSection('talents')"><i class="fas fa-user-plus"></i> Management Panel</button>
                                 <button class="btn btn-outline" style="justify-content: flex-start;"
-                                    onclick="showSection('chat')"><i class="fas fa-envelope"></i> Active
-                                    Messenger</button>
+                                    onclick="showSection('chat')"><i class="fas fa-envelope"></i> Active Messenger</button>
                             </div>
                         </div>
                     </div>
                 </section>
 
                 <!-- Talent Management -->
-                <section id="employees" class="content-section" style="display: none;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <section id="talents" class="content-section" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h1 class="section-header" style="margin-bottom: 0;">Workforce Records</h1>
                         <div style="display: flex; gap: 12px;">
-                            <button class="btn btn-outline" onclick="UI.openModal('securityModal')"><i
-                                    class="fas fa-file-download"></i> Export Sheet</button>
-                            <button class="btn btn-primary" onclick="openAddModal()"><i class="fas fa-plus"></i> Add New
-                                Employee</button>
+                            <button class="btn btn-outline" onclick="UI.openModal('securityModal')"><i class="fas fa-file-download"></i> Export Sheet</button>
+                            <button class="btn btn-primary" onclick="openAddModal()"><i class="fas fa-plus"></i> Add New Employee</button>
                         </div>
                     </div>
                     <div class="table-wrap">
@@ -111,6 +112,27 @@
                                 </tr>
                             </thead>
                             <tbody id="empTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Project Pipeline -->
+                <section id="projects" class="content-section" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h1 class="section-header">Live Project Pipeline</h1>
+                        <button class="btn btn-primary" onclick="openProjectModal()"><i class="fas fa-plus"></i> Launch New Project</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Project Identifier</th>
+                                    <th>Lead / Stakeholders</th>
+                                    <th>Status / Progress</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="projectTableBody"></tbody>
                         </table>
                     </div>
                 </section>
@@ -138,31 +160,22 @@
                     <div class="section-header">Internal Engagement HUB</div>
                     <div class="chat-box">
                         <div class="chat-aside">
-                            <div style="padding: 20px; font-weight: 700; border-bottom: 1px solid var(--border);">Active
-                                Talent Links</div>
+                            <div style="padding: 20px; font-weight: 700; border-bottom: 1px solid var(--border);">Active Talent Links</div>
                             <div id="chat-user-list" style="overflow-y: auto; flex: 1;"></div>
                         </div>
                         <div class="chat-main">
-                            <div
-                                style="padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: white;">
+                            <div style="padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: white;">
                                 <div style="display: flex; align-items: center; gap: 12px;">
                                     <i class="fas fa-arrow-left mobile-back-btn" onclick="document.querySelector('.chat-box').classList.remove('show-main')"></i>
-                                    <img src="https://ui-avatars.com/api/?name=Select+User" id="chat-active-avatar"
-                                        style="width: 32px; height: 32px; border-radius: 50%;">
+                                    <img src="https://ui-avatars.com/api/?name=Select+User" id="chat-active-avatar" style="width: 32px; height: 32px; border-radius: 50%;">
                                     <div>
-                                        <div style="font-weight: 700; font-size: 14px;" id="chat-active-name">Select
-                                            Communication Channel</div>
-                                        <div style="font-size: 11px; color: var(--text-muted);" id="chat-active-status">
-                                            Waiting for link establishment</div>
+                                        <div style="font-weight: 700; font-size: 14px;" id="chat-active-name">Select Communication Channel</div>
+                                        <div style="font-size: 11px; color: var(--text-muted);" id="chat-active-status">Waiting for link establishment</div>
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 10px;">
-                                    <button class="btn btn-outline" style="padding: 6px 12px; font-size: 11px;"
-                                        onclick="showGlobalIntercept()"><i class="fas fa-satellite-dish"></i> Global
-                                        Intercept</button>
-                                    <button id="btnSaveChat" class="btn btn-outline"
-                                        style="padding: 6px 12px; font-size: 11px; display: none;"
-                                        onclick="saveChatToNote()"><i class="fas fa-save"></i> Save As Note</button>
+                                    <button class="btn btn-outline" style="padding: 6px 12px; font-size: 11px;" onclick="showGlobalIntercept()"><i class="fas fa-satellite-dish"></i> Global Intercept</button>
+                                    <button id="btnSaveChat" class="btn btn-outline" style="padding: 6px 12px; font-size: 11px; display: none;" onclick="saveChatToNote()"><i class="fas fa-save"></i> Save As Note</button>
                                 </div>
                             </div>
                             <div class="chat-messages" id="chat-messages"></div>
@@ -177,32 +190,36 @@
         </main>
     </div>
 
-    <!-- Modals & Administrative Popups -->
+    <!-- Modals -->
     <div id="employeeModal" class="modal-overlay">
         <div class="card" style="width: 100%; max-width: 480px; padding: 32px;">
             <h2 id="modal-title" style="margin-bottom: 24px;">Provision Talent Record</h2>
             <form id="employeeForm">
                 <input type="hidden" id="edit-mode" value="add">
                 <input type="hidden" id="target-username">
-
                 <div style="margin-bottom: 16px;">
                     <label>Full Employee Identity Name</label>
                     <input type="text" id="emp-name" required>
                 </div>
-
                 <div style="margin-bottom: 16px;">
-                    <label>Profile Image (Digital Avatar)</label>
+                    <label>Digital Profile Avatar</label>
                     <input type="file" id="emp-photo" accept="image/*" style="padding: 6px;">
                     <div id="photo-preview" style="display: none; margin-top: 8px;">
-                        <img src=""
-                            style="width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border);">
+                        <img src="" style="width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border);">
                     </div>
                 </div>
-
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                     <div>
                         <label>Operational Group</label>
                         <select id="emp-role">
+                            <option value="Co-Founder">Co-Founder</option>
+                            <option value="AI Lead">AI Lead</option>
+                            <option value="AI Web Developer">AI Web Developer</option>
+                            <option value="AI App Developer">AI App Developer</option>
+                            <option value="WordPress Developer">WordPress Developer</option>
+                            <option value="Prompt Engineering">Prompt Engineering</option>
+                            <option value="Web Design">Web Design</option>
+                            <option value="Content Creator">Content Creator</option>
                             <option value="Employee">Full Time Employee</option>
                             <option value="Intern">Associate Intern</option>
                         </select>
@@ -212,74 +229,238 @@
                         <input type="text" id="emp-username" required>
                     </div>
                 </div>
-
                 <div style="margin-bottom: 16px;">
                     <label>Official Joining Date</label>
                     <input type="date" id="emp-joined-at">
                 </div>
-
                 <div id="password-field" style="margin-bottom: 24px;">
                     <label>Initial Access Key (Password)</label>
                     <input type="password" id="emp-password">
                 </div>
-
                 <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                    <button type="button" class="btn btn-outline" onclick="UI.closeModal('employeeModal')">Discard
-                        Changes</button>
+                    <button type="button" class="btn btn-outline" onclick="UI.closeModal('employeeModal')">Discard</button>
                     <button type="submit" class="btn btn-primary">Authorize Record Update</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Security Verification Modal -->
-    <div id="securityModal" class="modal-overlay" style="display: none;">
-        <div class="card" style="width: 100%; max-width: 400px; padding: 32px; text-align: center;">
-            <div
-                style="background: var(--primary-light); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: var(--primary);">
-                <i class="fas fa-shield-alt" style="font-size: 24px;"></i>
+    <!-- Project Mission Modal (FULL CRUD ENABLED) -->
+    <div id="projectModal" class="modal-overlay">
+        <div class="card" style="width: 100%; max-width: 700px; padding: 32px; border-radius: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                <h2 id="prj-modal-title" style="font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: var(--primary);">
+                    <i class="fas fa-rocket"></i> Launch Core Project Mission
+                </h2>
+                <i class="fas fa-times" style="cursor: pointer; font-size: 20px; opacity: 0.5;" onclick="UI.closeModal('projectModal')"></i>
             </div>
-            <h2 style="margin-bottom: 8px;">Security Verification</h2>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px;">Administrative password required
-                for data export authorization.</p>
-
-            <input type="password" id="authPassInput" placeholder="Confirm Admin Password" style="margin-bottom: 24px;">
-
-            <div style="display: flex; gap: 12px;">
-                <button class="btn btn-outline" style="flex: 1;"
-                    onclick="UI.closeModal('securityModal')">Cancel</button>
-                <button class="btn btn-primary" style="flex: 1;" onclick="verifyAndDownload()">Verify &
-                    Download</button>
+            <div id="projectForm" class="grid-2">
+                <input type="hidden" id="prj-edit-id" value="">
+                <div style="grid-column: span 2;">
+                    <label>Project Title</label>
+                    <input type="text" id="prj-title" placeholder="Project name..." style="width: 100%;">
+                </div>
+                <div style="grid-column: span 2;">
+                    <label>Mission Description & Scope</label>
+                    <textarea id="prj-desc" placeholder="Core objectives..." style="width: 100%; height: 80px;"></textarea>
+                </div>
+                <div style="grid-column: span 2;">
+                    <label>Required Navigation / Menus</label>
+                    <input type="text" id="prj-menus" placeholder="e.g. Home, About, Contact Us, Collection, Shop, Other..." style="width: 100%;">
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select id="prj-status" style="width: 100%;">
+                        <option value="Active">Active Mission</option>
+                        <option value="Pending">On Hold / Pending</option>
+                        <option value="Completed">Mission Accomplished</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Project Lead</label>
+                    <select id="prj-lead" style="width: 100%;"></select>
+                </div>
+                <div>
+                    <label>Mission Deadline</label>
+                    <input type="date" id="prj-due" style="width: 100%;">
+                </div>
+                <div>
+                    <label>Assign Team</label>
+                    <div id="prj-team-select" style="max-height: 100px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: #fcfcfc;"></div>
+                </div>
+                <div style="grid-column: span 2;">
+                    <label>Mission Assets / Briefings</label>
+                    <input type="file" id="prj-files" multiple style="width: 100%; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 6px; cursor: pointer; font-size: 13px;" accept="image/*,.pdf,.doc,.docx,.txt,.csv">
+                    <div style="font-size: 10px; color: #64748b; margin-top: 6px;"><i class="fas fa-info-circle"></i> Attach documents or images. Files will be securely converted to binary strings (Max 500KB per file for cloud storage).</div>
+                </div>
+                <div style="grid-column: span 2; display: flex; gap: 12px; margin-top: 10px;">
+                    <button id="btnLaunch" class="btn btn-primary" style="flex: 1;" onclick="launchProject()">Launch / Update Mission</button>
+                    <button class="btn btn-outline" onclick="UI.closeModal('projectModal')">Abort</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Script Entry -->
-    <script src="script.js"></script>
-    <script type="module">
-        import { DB } from './db.js';
+    <!-- Security Verification Modal -->
+    <div id="securityModal" class="modal-overlay" style="display: none;">
+        <div class="card" style="width: 100%; max-width: 400px; padding: 32px; text-align: center;">
+            <div style="background: var(--primary-light); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: var(--primary);">
+                <i class="fas fa-shield-alt" style="font-size: 24px;"></i>
+            </div>
+            <h2 style="margin-bottom: 8px;">Security Verification</h2>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px;">Administrative password required.</p>
+            <input type="password" id="authPassInput" placeholder="Confirm Admin Password" style="margin-bottom: 24px;">
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-outline" style="flex: 1;" onclick="UI.closeModal('securityModal')">Cancel</button>
+                <button class="btn btn-primary" style="flex: 1;" onclick="verifyAndDownload()">Verify</button>
+            </div>
+        </div>
+    </div>
 
+    <script>
         // Page Guard
         Auth.protect('admin');
 
         // Global State
         let selectedChatUser = null;
         let isGlobalIntercept = false;
-        let lastMsgCount = 0;
         let allUsers = [];
         let allMessages = [];
+        let allProjects = [];
 
-        // Attach functions to window for HTML onclick handlers
+        window.downloadFile = (b64, name) => {
+            const link = document.createElement('a');
+            link.href = b64;
+            link.download = name;
+            link.click();
+        };
+
+        // Image Processing Utility
+        const ImageUtils = {
+            toBase64: (file) => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            })
+        };
+
+        window.openProjectModal = (id = null) => {
+            renderEmployees(); 
+            const title = document.getElementById('prj-modal-title');
+            const editId = document.getElementById('prj-edit-id');
+            const btn = document.getElementById('btnLaunch');
+            
+            // RESET FORM
+            document.getElementById('prj-title').value = '';
+            document.getElementById('prj-desc').value = '';
+            document.getElementById('prj-menus').value = '';
+            document.getElementById('prj-status').value = 'Active';
+            document.querySelectorAll('#prj-team-select input').forEach(i => i.checked = false);
+
+            if(id) {
+                const p = allProjects.find(x => x.id === id);
+                title.innerHTML = '<i class="fas fa-edit"></i> Update Project Record';
+                editId.value = id;
+                btn.innerText = 'Synchronize Updates';
+                
+                document.getElementById('prj-title').value = p.title;
+                document.getElementById('prj-desc').value = p.desc || '';
+                document.getElementById('prj-menus').value = p.menus || '';
+                document.getElementById('prj-status').value = p.status || 'Active';
+                document.getElementById('prj-lead').value = p.lead;
+                document.getElementById('prj-due').value = p.due || '';
+                (p.team || []).forEach(tm => {
+                    const cb = document.querySelector(`#prj-team-select input[value="${tm}"]`);
+                    if(cb) cb.checked = true;
+                });
+            } else {
+                title.innerHTML = '<i class="fas fa-rocket"></i> Launch Core Project Mission';
+                editId.value = '';
+                btn.innerText = 'Launch Core Project';
+            }
+            
+            // Reset File input when opening modal
+            const fileInput = document.getElementById('prj-files');
+            if(fileInput) fileInput.value = '';
+            
+            UI.openModal('projectModal');
+        };
+
+        window.launchProject = async () => {
+            const btn = document.getElementById('btnLaunch');
+            const originalText = btn.innerText;
+            const editId = document.getElementById('prj-edit-id').value;
+            
+            const title = document.getElementById('prj-title').value.trim();
+            const desc = document.getElementById('prj-desc').value.trim();
+            const menus = document.getElementById('prj-menus').value.trim();
+            const lead = document.getElementById('prj-lead').value;
+            const status = document.getElementById('prj-status').value;
+            const due = document.getElementById('prj-due').value;
+            
+            if (!title || !lead) return UI.toast('Project Title and Lead are required.', 'danger');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+
+            try {
+                // Process File Uploads (Base64 Encoding for Firestore)
+                const fileInput = document.getElementById('prj-files');
+                const filePromises = Array.from(fileInput.files).map(file => {
+                    return new Promise((resolve, reject) => {
+                        if (file.size > 500 * 1024) return reject(new Error(`Security Alert: ${file.name} exceeds the 500KB limit for direct database storage.`));
+                        const reader = new FileReader();
+                        reader.onload = e => resolve({ name: file.name, data: e.target.result });
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                });
+                
+                const newFiles = await Promise.all(filePromises);
+
+                const team = [];
+                document.querySelectorAll('#prj-team-select input:checked').forEach(i => team.push(i.value));
+
+                // If editing, append new files to the existing files
+                let finalFiles = [...newFiles];
+                if(editId) {
+                    const existingProject = allProjects.find(x => x.id === editId);
+                    if(existingProject && existingProject.files) {
+                        finalFiles = [...existingProject.files, ...newFiles]; // Add new files alongside the old ones
+                    }
+                }
+
+                const projectData = { title, desc, menus, lead, status, due, team, files: finalFiles };
+
+                if(editId) {
+                    await DB.updateProject(editId, projectData);
+                    UI.toast('Mission Updates Synchronized!');
+                } else {
+                    await DB.createProject({ ...projectData, owner: 'System Admin' });
+                    UI.toast('New Mission Stored in Firebase!');
+                }
+                
+                UI.closeModal('projectModal');
+                
+                // Also automatically navigate to Tracker if not already there
+                showSection('projects');
+            } catch (err) {
+                UI.toast(err.message || 'Sync Failed', 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        };
+
         window.showSection = (id) => {
             document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
             const section = document.getElementById(id);
             if (section) section.style.display = 'block';
-            
             document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
             const activeLink = document.querySelector(`[onclick="showSection('${id}')"]`);
             if (activeLink) activeLink.classList.add('active');
-
-            if (id === 'employees') renderEmployees();
+            if (id === 'talents') renderEmployees();
             if (id === 'reports') renderReports();
             if (id === 'chat') renderChatList();
             if (id === 'dashboard') updateStats();
@@ -287,238 +468,228 @@
 
         const updateStats = () => {
             const employees = allUsers.filter(u => u.role !== 'admin');
-            document.getElementById('stat-total-emp').innerText = employees.length;
-            document.getElementById('stat-active-now').innerText = employees.filter(u => u.isWorking).length;
+            const t = document.getElementById('stat-total-emp');
+            const a = document.getElementById('stat-active-now');
+            if(t) t.innerText = employees.length;
+            if(a) a.innerText = employees.filter(u => u.isWorking).length;
         };
 
         window.openAddModal = () => {
             document.getElementById('modal-title').innerText = 'Provision Talent Record';
             document.getElementById('edit-mode').value = 'add';
             document.getElementById('employeeForm').reset();
-            document.getElementById('emp-joined-at').value = new Date().toISOString().split('T')[0];
             document.getElementById('photo-preview').style.display = 'none';
-            document.getElementById('photo-preview').querySelector('img').src = '';
             UI.openModal('employeeModal');
         };
 
         const renderEmployees = () => {
             const employees = allUsers.filter(u => u.role !== 'admin');
             const tbody = document.getElementById('empTableBody');
+            if(!tbody) return;
             tbody.innerHTML = employees.map(u => `
                 <tr>
-                    <td style="display: flex; align-items: center; gap: 12px; font-weight: 600;">
-                        <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(u.name)}" style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9;">
+                    <td style="display: flex; align-items: center; gap: 12px; font-weight: 600; padding: 12px 20px;">
+                        <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(u.name)}" class="profile-img">
                         ${u.name}
                     </td>
-                    <td>${u.role} | <span style="background: ${u.isWorking ? '#10b981' : '#94a3b8'}; color: white; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 800;">${u.isWorking ? 'ONLINE' : 'OFFLINE'}</span></td>
-                    <td>${u.username}</td>
-                    <td style="text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
-                        <button class="btn btn-outline" style="padding: 6px 12px;" onclick="editEmployee('${u.username}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-danger" style="padding: 6px 12px;" onclick="deleteEmployee('${u.username}')"><i class="fas fa-trash"></i></button>
+                    <td style="padding: 12px 20px;">${u.role} <span style="background: ${u.isWorking ? '#10b981' : '#94a3b8'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 9px; margin-left: 8px;">${u.isWorking ? 'ONLINE' : 'OFFLINE'}</span></td>
+                    <td style="padding: 12px 20px; font-family: monospace;">${u.username}</td>
+                    <td style="text-align: right; padding: 12px 20px;">
+                        <button class="btn btn-outline" onclick="editEmployee('${u.username}')"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger" onclick="DB.deleteUser('${u.username}')"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>
-            `).join('') || '<tr><td colspan="4" style="padding: 40px; text-align: center; color: var(--text-muted);">No talents found.</td></tr>';
+            `).join('') || '<tr><td colspan="4" style="text-align: center; padding: 20px;">Searching records...</td></tr>';
+
+            const l = document.getElementById('prj-lead');
+            const t = document.getElementById('prj-team-select');
+            if(l) l.innerHTML = `<option value="">Select Project Lead</option>` + employees.map(u => `<option value="${u.username}">${u.name}</option>`).join('');
+            if(t) t.innerHTML = employees.map(u => `<label style="display: flex; align-items: center; gap: 10px; font-size: 13px; margin: 4px 0; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'"><input type="checkbox" value="${u.username}" style="width: auto; margin: 0; min-height: auto; display: inline-block;"> <span style="font-weight: 600; color: #334155;">${u.name}</span></label>`).join('');
         };
 
         window.editEmployee = (username) => {
-            const user = allUsers.find(u => u.username === username);
-            if (!user) return;
-            document.getElementById('modal-title').innerText = 'Re-Provision Access Key';
+            const u = allUsers.find(x => x.username === username);
+            if(!u) return;
+            document.getElementById('modal-title').innerText = 'Refine Talent Rec.';
             document.getElementById('edit-mode').value = 'edit';
             document.getElementById('target-username').value = username;
-            document.getElementById('emp-name').value = user.name;
-            document.getElementById('emp-username').value = user.username;
-            document.getElementById('emp-role').value = user.role;
-            document.getElementById('emp-joined-at').value = (user.joinedAt || "").split('T')[0];
-            if (user.photo) {
-                document.getElementById('photo-preview').style.display = 'block';
-                document.getElementById('photo-preview').querySelector('img').src = user.photo;
-            } else {
-                document.getElementById('photo-preview').style.display = 'none';
-                document.getElementById('photo-preview').querySelector('img').src = '';
-            }
+            document.getElementById('emp-name').value = u.name;
+            document.getElementById('emp-username').value = u.username;
+            document.getElementById('emp-role').value = u.role;
             UI.openModal('employeeModal');
         };
 
-        window.deleteEmployee = async (username) => {
-            if (confirm(`Confirm data erasure for ID: ${username}?`)) {
-                await DB.deleteUser(username);
-                UI.toast('Talent record purged.');
-            }
-        };
-
         const renderChatList = () => {
-            const employees = allUsers.filter(u => u.role !== 'admin');
-            const list = document.getElementById('chat-user-list');
-            list.innerHTML = employees.map(u => `
-                <div class="nav-item" style="margin: 4px 12px; cursor: pointer; color: var(--text-main); ${selectedChatUser === u.username ? 'background: var(--primary-light); border-left: 3px solid var(--primary);' : ''}" onclick="selectChat('${u.username}')">
-                    <img src="https://ui-avatars.com/api/?name=${u.name}" style="width: 24px; height: 24px; border-radius: 50%;">
-                    <span>${u.name}</span>
-                </div>
-            `).join('') || '<div style="padding: 20px; font-size: 12px;">No active links.</div>';
-        };
+            const emps = allUsers.filter(u => u.role !== 'admin');
+            
+            // PRIORITY SORT: Co-Founders first, then alphabetically
+            emps.sort((a,b) => {
+                const aFounder = a.role && a.role.toLowerCase().includes('founder');
+                const bFounder = b.role && b.role.toLowerCase().includes('founder');
+                if (aFounder && !bFounder) return -1;
+                if (!aFounder && bFounder) return 1;
+                return a.name.localeCompare(b.name);
+            });
 
-        window.showGlobalIntercept = () => {
-            isGlobalIntercept = true;
-            selectedChatUser = null;
-            document.querySelector('.chat-box').classList.add('show-main');
-            document.getElementById('chat-active-name').innerText = 'Global Intercept Feed';
-            document.getElementById('chat-active-avatar').src = 'https://ui-avatars.com/api/?name=Global+Feed&background=ef4444&color=fff';
-            document.getElementById('chat-active-status').innerText = 'LIVE: Recording all Internal Peer Interactions';
-            document.getElementById('btnSaveChat').style.display = 'inline-flex';
-            document.getElementById('btnSaveChat').innerHTML = '<i class="fas fa-download"></i> Save Global Logs';
-            document.getElementById('chat-input-area').style.display = 'none';
-            renderChatList();
-            loadMessages();
+            const list = document.getElementById('chat-user-list');
+            if(!list) return;
+            list.innerHTML = emps.map(u => `
+                <div class="nav-item" style="cursor: pointer; padding: 12px 20px; display: flex; align-items: center; gap: 16px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); margin: 6px 12px; border-radius: 16px; ${selectedChatUser === u.username ? 'background: rgba(37, 99, 235, 0.08); box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2);' : ''}" 
+                     onclick="selectChat('${u.username}')">
+                    <div style="position: relative; flex-shrink: 0; width: 48px; height: 48px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 2px solid ${u.isWorking ? '#10b981' : '#e2e8f0'};">
+                        <img src="${u.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(u.name)}" 
+                             style="width: 100%; height: 100%; object-fit: contain; object-position: center;">
+                        <div style="position: absolute; bottom: 1px; right: 1px; width: 12px; height: 12px; border-radius: 50%; background: ${u.isWorking ? '#10b981' : '#94a3b8'}; border: 2px solid white; box-shadow: 0 0 8px ${u.isWorking ? 'rgba(16,185,129,0.3)' : 'transparent'};"></div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-size: 14px; font-weight: 700; color: #1e293b; letter-spacing: -0.01em;">${u.name}</span>
+                        <span style="font-size: 10px; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;">${u.role || 'Personnel'}</span>
+                    </div>
+                </div>
+            `).join('');
         };
 
         window.selectChat = async (username) => {
             isGlobalIntercept = false;
             selectedChatUser = username;
             document.querySelector('.chat-box').classList.add('show-main');
-            const user = allUsers.find(u => u.username === username);
-            document.getElementById('chat-active-name').innerText = user.name;
-            document.getElementById('chat-active-avatar').src = user.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`;
-            document.getElementById('chat-active-status').innerText = user.isWorking ? 'ONLINE: High-Trust Link Established' : 'STANDBY: Offline Tracking Active';
-            document.getElementById('btnSaveChat').style.display = 'inline-flex';
-            document.getElementById('btnSaveChat').innerHTML = '<i class="fas fa-save"></i> Save As Note';
+            const u = allUsers.find(x => x.username === username);
+            document.getElementById('chat-active-name').innerText = u.name;
+            document.getElementById('chat-active-avatar').src = u.photo || `https://ui-avatars.com/api/?name=${u.name}`;
+            document.getElementById('chat-active-status').innerText = u.isWorking ? 'ONLINE' : 'OFFLINE';
             document.getElementById('chat-input-area').style.display = 'flex';
-            
-            await DB.markSeen('admin', username);
-            renderChatList();
+            loadMessages();
+        };
+
+        window.showGlobalIntercept = () => {
+            isGlobalIntercept = true;
+            selectedChatUser = null;
+            document.getElementById('chat-active-name').innerText = 'Global Operational Feed';
+            document.getElementById('chat-active-status').innerText = 'Intercepting all outgoing peer transmissions';
+            document.getElementById('chat-input-area').style.display = 'none';
             loadMessages();
         };
 
         const loadMessages = () => {
             const container = document.getElementById('chat-messages');
-            if (!container) return;
-
-            if (isGlobalIntercept) {
-                const messages = allMessages.filter(m => m.from !== 'admin' && m.to !== 'admin');
-                container.innerHTML = messages.map(m => `
-                    <div class="msg-bubble msg-them" style="width: 100%; max-width: 100%; border-radius: 4px; background: #fff;">
-                        <span style="font-weight: 800; color: var(--primary); font-size: 10px;">${m.from.toUpperCase()}</span> 
-                        <i class="fas fa-long-arrow-alt-right" style="font-size: 10px; margin: 0 4px;"></i> 
-                        <span style="font-weight: 800; color: #ef4444; font-size: 10px;">${m.to.toUpperCase()}</span>
-                        <div style="margin-top: 4px;">${m.text}</div>
-                        <div style="font-size: 8px; opacity: 0.5; text-align: right;">${new Date(m.time).toLocaleTimeString()}</div>
-                    </div>
-                `).join('') || '<div style="padding: 40px; text-align: center; color: var(--text-muted);">No peer transactions documented.</div>';
-            } else if (selectedChatUser) {
-                const messages = allMessages.filter(m => (m.to === selectedChatUser || m.from === selectedChatUser));
-                container.innerHTML = messages.map(m => {
-                    const isMe = m.from === 'admin';
-                    const time = new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    return `
+            if(!container) return;
+            const msgs = isGlobalIntercept ? allMessages.filter(m => m.from !== 'admin') : allMessages.filter(m => m.from === selectedChatUser || m.to === selectedChatUser);
+            
+            container.innerHTML = msgs.map(m => {
+                const isMe = m.from === 'admin';
+                const sender = allUsers.find(u => u.username === m.from);
+                const recipient = allUsers.find(u => u.username === m.to);
+                
+                const sName = m.from === 'admin' ? 'System Admin' : (sender ? sender.name : m.from);
+                const rName = m.to === 'admin' ? 'System Admin' : (recipient ? recipient.name : m.to);
+                
+                const routeLabel = isGlobalIntercept ? `${sName} ➔ ${rName}` : sName;
+                
+                return `
+                    <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
+                        <div style="font-size: 10px; font-weight: 800; color: var(--primary); margin-bottom: 4px; padding: 0 4px; opacity: 0.8;">${routeLabel}</div>
                         <div class="msg-bubble ${isMe ? 'msg-me' : 'msg-them'}">
-                            <div style="font-size: 9px; opacity: 0.7; margin-bottom: 2px;">${isMe ? 'ADMIN' : m.from.toUpperCase()}</div>
-                            <div>${m.text}</div>
-                            <div class="msg-time">${time}</div>
-                        </div>`;
-                }).join('');
-            }
+                            <div style="font-size: 13px;">${m.text}</div>
+                            <div style="font-size: 9px; opacity: 0.5; margin-top: 4px; text-align: ${isMe ? 'right' : 'left'};">
+                                ${new Date(m.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
             container.scrollTop = container.scrollHeight;
         };
 
         window.sendMessage = async () => {
-            const input = document.getElementById('chatInput');
-            if (!input.value.trim() || !selectedChatUser) return;
-            await DB.sendMessage('admin', selectedChatUser, input.value);
-            input.value = '';
+            const i = document.getElementById('chatInput');
+            if(!i.value.trim() || !selectedChatUser) return;
+            await DB.sendMessage('admin', selectedChatUser, i.value);
+            i.value = '';
         };
 
         const renderReports = () => {
-            const employees = allUsers.filter(u => u.role !== 'admin');
-            const tbody = document.getElementById('reportTableBody');
+            const tb = document.getElementById('reportTableBody');
+            if(!tb) return;
             let rows = [];
-            employees.forEach(u => {
-                (u.sessions || []).forEach(s => {
-                    rows.push(`<tr><td>${u.name}</td><td>${new Date(s.start).toLocaleString()}</td><td>${s.end ? new Date(s.end).toLocaleString() : '...'}</td><td>${s.duration || '00:00:00'}</td></tr>`);
-                });
-            });
-            tbody.innerHTML = rows.reverse().join('') || '<tr><td colspan="4" style="padding: 40px; text-align: center;">No mission cycles documented.</td></tr>';
+            allUsers.forEach(u => (u.sessions||[]).forEach(s => rows.push(`<tr><td>${u.name}</td><td>${new Date(s.start).toLocaleString()}</td><td>${s.end ? new Date(s.end).toLocaleString() : '...'}</td><td>${s.duration || '00:00:00'}</td></tr>`)));
+            tb.innerHTML = rows.reverse().join('');
         };
 
         window.verifyAndDownload = () => {
-            const pass = document.getElementById('authPassInput').value;
-            const admin = allUsers.find(u => u.role === 'admin');
-            if (admin && pass === admin.password) {
-                UI.toast('Export Authorized.');
+            const p = document.getElementById('authPassInput').value;
+            const a = allUsers.find(u => u.role === 'admin');
+            if(a && p === a.password) {
                 UI.closeModal('securityModal');
-                document.getElementById('authPassInput').value = '';
                 triggerExport();
             } else {
-                UI.toast('Export Unauthorized: Invalid Password.', 'danger');
+                UI.toast('Access Denied', 'danger');
             }
         };
 
         const triggerExport = () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            const employees = allUsers.filter(u => u.role !== 'admin');
-            doc.setFontSize(22);
-            doc.setTextColor(37, 99, 235);
-            doc.text('TechNova Workforce Sheet', 14, 20);
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
-            const tableData = employees.map(u => [u.name, u.role, u.username, (u.sessions||[]).length, new Date(u.joinedAt || Date.now()).toLocaleDateString()]);
-            doc.autoTable({
-                startY: 35,
-                head: [['Full Name', 'Role', 'Username', 'Attendance', 'Joined Date']],
-                body: tableData,
-                headStyles: { fillColor: [37, 99, 235] },
-                alternateRowStyles: { fillColor: [248, 250, 252] }
-            });
-            doc.save(`TNS_Workforce_${new Date().toISOString().split('T')[0]}.pdf`);
+            doc.text('TNS Workforce Export', 14, 20);
+            const data = allUsers.filter(u => u.role !== 'admin').map(u => [u.name, u.role, u.username, (u.sessions||[]).length]);
+            doc.autoTable({ startY: 25, head: [['Name', 'Role', 'ID', 'Sessions']], body: data });
+            doc.save('TNS_Export.pdf');
         };
 
-        // Form Submit
-        document.getElementById('employeeForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const editMode = document.getElementById('edit-mode').value === 'edit';
-            const originalUsername = document.getElementById('target-username').value;
-            const photoPreview = document.getElementById('photo-preview');
-            
-            const userData = {
-                name: document.getElementById('emp-name').value,
-                username: document.getElementById('emp-username').value,
-                role: document.getElementById('emp-role').value,
-                photo: (photoPreview.style.display === 'block') ? photoPreview.querySelector('img').src : '',
-                joinedAt: document.getElementById('emp-joined-at').value
-            };
-            const passInput = document.getElementById('emp-password').value;
-            if (passInput) userData.password = passInput;
-
-            if (editMode) {
-                await DB.updateUser(originalUsername, userData);
-            } else {
-                if (allUsers.find(u => u.username === userData.username)) { UI.toast('ID unavailable.', 'danger'); return; }
-                await DB.createUser(userData);
-            }
-            UI.toast('Access authorized.');
-            UI.closeModal('employeeModal');
-            document.getElementById('employeeForm').reset();
-        });
-
-        // Initialize Real-time Listeners
-        DB.onUsers((users) => {
-            allUsers = users;
-            // Auto-Sanitize legacy broken photos from local-origin URLs
-            users.forEach(u => {
-                if (u.photo && u.photo.startsWith(window.location.origin)) {
-                    DB.updateUser(u.username, { photo: '' });
-                }
+        const form = document.getElementById('employeeForm');
+        if(form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await DB.createUser({
+                    name: document.getElementById('emp-name').value,
+                    username: document.getElementById('emp-username').value,
+                    role: document.getElementById('emp-role').value,
+                    password: document.getElementById('emp-password').value || '123'
+                });
+                UI.closeModal('employeeModal');
             });
-            updateStats();
-            renderEmployees();
-            renderReports();
-            renderChatList();
-        });
+        }
 
-        DB.onMessages((messages) => {
-            allMessages = messages;
-            loadMessages();
+        window.addEventListener('load', () => {
+            if(typeof DB !== 'undefined') {
+                DB.initAdmin();
+                DB.onUsers(u => { allUsers = u; updateStats(); renderEmployees(); renderChatList(); renderReports(); });
+                DB.onMessages(m => { allMessages = m; loadMessages(); });
+                DB.onProjects(p => { 
+                    allProjects = p;
+                    const b = document.getElementById('projectTableBody');
+                    if(b) {
+                        b.innerHTML = p.map(x => {
+                            const leadUser = allUsers.find(u => u.username === x.lead);
+                            const filesHtml = (x.files && x.files.length) 
+                                ? x.files.map(f => `<button class="btn btn-outline" style="padding: 2px 6px; font-size: 10px; margin-right: 4px;" onclick="downloadFile('${f.data}', '${f.name}')" title="${f.name}"><i class="fas fa-file-download"></i></button>`).join('')
+                                : '<span style="opacity:0.3; font-size:11px;">None</span>';
+
+                            return `
+                                <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
+                                    <td style="font-weight: 700; font-size: 14px; padding: 16px 20px;">
+                                        ${x.title} <br> 
+                                        <span style="font-size: 10px; opacity: 0.5; font-weight: 400;">ID: ${x.id}</span>
+                                    </td>
+                                    <td style="padding: 16px 20px;">
+                                        <div style="font-weight: 600; color: var(--primary);">${leadUser ? leadUser.name : x.lead}</div>
+                                        <div style="font-size: 11px; opacity: 0.7;">${x.team ? x.team.length : 0} Team Members</div>
+                                    </td>
+                                    <td style="padding: 16px 20px;">
+                                        <span style="background: ${x.status === 'Completed' ? '#dcfce7' : x.status === 'Pending' ? '#fef9c3' : '#eff6ff'}; color: ${x.status === 'Completed' ? '#166534' : x.status === 'Pending' ? '#854d0e' : '#1e40af'}; padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+                                            ${x.status || 'Active'}
+                                        </span>
+                                    </td>
+                                    <td style="text-align: right; padding: 16px 20px;">
+                                        <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+                                            <div style="display: flex;">${filesHtml}</div>
+                                            <button class="btn btn-outline" style="padding: 6px 10px; border-color: #e2e8f0; color: #64748b;" onclick="openProjectModal('${x.id}')" title="Edit Mission"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-danger" style="padding: 6px 10px;" onclick="DB.deleteProject('${x.id}')" title="Terminate Mission"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>`;
+                        }).join('') || '<tr><td colspan="4" style="text-align: center; padding: 40px; opacity: 0.5;">No missions currently active in the pipeline.</td></tr>';
+                    }
+                });
+            }
         });
     </script>
 </body>

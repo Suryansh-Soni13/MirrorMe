@@ -6,17 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Login | TechNova Solutions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.4">
 </head>
 
 <body class="auth-wrapper">
     <div class="card auth-card">
         <div style="margin-bottom: 32px;">
-            <h1 style="color: var(--primary); font-size: 28px; margin-bottom: 8px;">TechNova Solutions</h1>
+            <h1 style="font-size: 28px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">TechNova Solutions
+            </h1>
             <p style="color: var(--text-muted); font-size: 14px;">Workforce Management Portal</p>
         </div>
 
-        <form id="loginForm">
+        <form id="loginForm" onsubmit="return false;">
             <div style="text-align: left; margin-bottom: 20px;">
                 <label style="display: block; font-weight: 600; margin-bottom: 8px;">Username</label>
                 <input type="text" id="username" placeholder="e.g. admin" required>
@@ -26,7 +27,7 @@
                 <input type="password" id="password" placeholder="••••••••" required>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Access Dashboard</button>
+            <button type="button" id="loginBtn" class="btn btn-primary" style="width: 100%;">Access Dashboard</button>
 
             <div id="login-error" style="margin-top: 16px; color: #ef4444; font-size: 13px; display: none;">
                 <i class="fas fa-exclamation-circle"></i> Invalid identity credentials.
@@ -35,42 +36,74 @@
 
         <p
             style="margin-top: 40px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">
-            Protected by TechNova Cloud System
+            TechNova Cloud System 2.0
         </p>
     </div>
 
-    <!-- Script Integration -->
-    <script src="script.js"></script>
-    <script type="module">
-        import { DB } from './db.js';
+    <!-- Firebase Core & Firestore (Compat Versions) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+    <!-- Database Logic -->
+    <script src="db.js"></script>
+    <script src="script.js"></script>
+
+    <script shadow>
+        // Bind the login function to the window
+        window.handleLogin = async () => {
             const usernameInput = document.getElementById('username').value.trim();
             const passwordInput = document.getElementById('password').value.trim();
-
             const errorMsg = document.getElementById('login-error');
+            const submitBtn = document.getElementById('loginBtn');
+
+            if (!usernameInput || !passwordInput) return;
+
             errorMsg.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Authenticating...";
 
             try {
-                // Ensure admin exists on first use
+                // Check connectivity
+                if (typeof DB === 'undefined') throw new Error("Database not loaded");
+
+                // Initialize admin
                 await DB.initAdmin();
-                
+
                 const users = await DB.getUsers();
                 const user = users.find(u => u.username === usernameInput && u.password === passwordInput);
 
                 if (user) {
-                    // Set session
                     sessionStorage.setItem('currentUser', JSON.stringify(user));
-                    // Redirect based on role
                     window.location.href = (user.role === 'admin' ? 'admin.html' : 'employee.html');
                 } else {
+                    errorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Invalid credentials.';
                     errorMsg.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Access Dashboard";
                 }
             } catch (error) {
                 console.error("[Login Error]", error);
-                alert("Database Connection Error. Please verify your Firebase project config in db.js!");
+                errorMsg.innerHTML = '<i class="fas fa-wifi"></i> Connection Error. Checking Firebase Handshake...';
+                errorMsg.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Retry Access";
             }
+        };
+
+        // Attach listener
+        document.getElementById('loginBtn').onclick = window.handleLogin;
+
+        // Also allow Enter key
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') window.handleLogin();
+        });
+
+        // Background Check
+        window.addEventListener('load', () => {
+            console.log("System Check: Loading Identity Authority...");
+            setTimeout(() => {
+                if (typeof DB !== 'undefined') DB.initAdmin();
+            }, 1000);
         });
     </script>
 </body>

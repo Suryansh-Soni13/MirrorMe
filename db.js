@@ -1,35 +1,11 @@
 /**
  * =====================================================================
- *  TechNova Solutions — Firebase Firestore Database Layer (db.js)
- *  All platform data is stored in the cloud via Firebase Firestore.
- *  Collections:
- *    • users     → All user accounts (admin + employees)
- *    • messages  → All chat messages
+ *  TechNova Solutions — Firebase Firestore Compatibility Layer (db.js)
+ *  Rewritten to support direct file opening (file:// protocol)
  * =====================================================================
  */
 
-// ── Firebase SDK (v9 compat mode — works with plain HTML/JS) ─────────
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-    getFirestore,
-    collection,
-    doc,
-    getDocs,
-    getDoc,
-    setDoc,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    query,
-    orderBy,
-    onSnapshot,
-    serverTimestamp,
-    where
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
 // ── 🔥 YOUR FIREBASE CONFIG ───────────────────────────────────────────
-// Replace the values below with your own Firebase project credentials.
-// Go to: https://console.firebase.google.com → Your Project → Project Settings → Your Apps → Web App
 const firebaseConfig = {
     apiKey:            "AIzaSyBZ-tGz_tL8xdq2dhtSil2JIrvSCS1jSl4",
     authDomain:        "technova-mirrorme.firebaseapp.com",
@@ -39,67 +15,50 @@ const firebaseConfig = {
     appId:             "1:432719917389:web:dd86284382b6ef84e10704"
 };
 
-// ── Initialize ────────────────────────────────────────────────────────
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+// ── Initialize Firebase (Compat Mode) ─────────────────────────────────
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-// ── Collection References ─────────────────────────────────────────────
-const usersCol    = collection(db, "users");
-const messagesCol = collection(db, "messages");
-
-// ═════════════════════════════════════════════════════════════════════
-//  DB — Public API
-// ═════════════════════════════════════════════════════════════════════
-export const DB = {
+// ── Global DB Object ──────────────────────────────────────────────────
+window.DB = {
 
     // ── USERS ─────────────────────────────────────────────────────────
 
-    /** Fetch all users as an array */
     async getUsers() {
-        const snap = await getDocs(usersCol);
+        const snap = await db.collection("users").get();
         return snap.docs.map(d => ({ id: d.id, ...d.data() }));
     },
 
-    /** Fetch a single user by username field */
     async getUserByUsername(username) {
-        const q    = query(usersCol, where("username", "==", username));
-        const snap = await getDocs(q);
+        const snap = await db.collection("users").where("username", "==", username).get();
         if (snap.empty) return null;
         const d = snap.docs[0];
         return { id: d.id, ...d.data() };
     },
 
-    /** Create a new user. Returns the new doc ID. */
     async createUser(userData) {
-        // Use username as the document ID for easy lookup
-        const ref = doc(usersCol, userData.username);
-        await setDoc(ref, {
+        await db.collection("users").doc(userData.username).set({
             ...userData,
-            sessions:     userData.sessions     || [],
-            isWorking:    userData.isWorking     || false,
-            createdAt:    serverTimestamp()
+            sessions:     userData.sessions || [],
+            isWorking:    userData.isWorking || false,
+            createdAt:    firebase.firestore.FieldValue.serverTimestamp()
         });
         return userData.username;
     },
 
-    /** Update fields on an existing user (by username) */
     async updateUser(username, updates) {
-        const ref = doc(usersCol, username);
-        await updateDoc(ref, updates);
+        await db.collection("users").doc(username).update(updates);
     },
 
-    /** Delete a user by username */
     async deleteUser(username) {
-        const ref = doc(usersCol, username);
-        await deleteDoc(ref);
+        await db.collection("users").doc(username).delete();
     },
 
-    /** Ensure the default admin account exists */
     async initAdmin() {
-        const ref  = doc(usersCol, "admin");
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
-            await setDoc(ref, {
+        const ref = db.collection("users").doc("admin");
+        const snap = await ref.get();
+        if (!snap.exists) {
+            await ref.set({
                 id:        "ADM-001",
                 username:  "admin",
                 password:  "admin123",
@@ -114,57 +73,80 @@ export const DB = {
         }
     },
 
+    // ── PROJECTS ──────────────────────────────────────────────────────
+    async createProject(data) {
+        const id = 'PRJ-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        await db.collection("projects").doc(id).set({
+            id,
+            ...data,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return id;
+    },
+
+    async updateProject(id, data) {
+        await db.collection("projects").doc(id).update({
+            ...data,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    },
+
+    async deleteProject(id) {
+        await db.collection("projects").doc(id).delete();
+    },
+
+    onProjects(callback) {
+        return db.collection("projects").onSnapshot(snap => {
+            const projects = snap.docs.map(doc => doc.data());
+            // Client-side sort for safety
+            projects.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            callback(projects);
+        });
+    },
+
     // ── MESSAGES ──────────────────────────────────────────────────────
 
-    /** Fetch all messages ordered by time */
     async getMessages() {
-        const q    = query(messagesCol, orderBy("time", "asc"));
-        const snap = await getDocs(q);
+        const snap = await db.collection("messages").orderBy("time", "asc").get();
         return snap.docs.map(d => ({ id: d.id, ...d.data() }));
     },
 
-    /** Send a new message */
     async sendMessage(from, to, text) {
-        await addDoc(messagesCol, {
+        await db.collection("messages").add({
             from,
             to,
             text,
             time:      new Date().toISOString(),
             seen:      false,
-            createdAt: serverTimestamp()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
     },
 
-    /** Mark messages as seen (to = recipient, from = sender) */
     async markSeen(recipient, sender) {
-        const q    = query(messagesCol, where("to", "==", recipient), where("from", "==", sender), where("seen", "==", false));
-        const snap = await getDocs(q);
-        const updates = snap.docs.map(d => updateDoc(d.ref, { seen: true }));
-        await Promise.all(updates);
+        const snap = await db.collection("messages")
+            .where("to", "==", recipient)
+            .where("from", "==", sender)
+            .where("seen", "==", false)
+            .get();
+        
+        const batch = db.batch();
+        snap.docs.forEach(d => batch.update(d.ref, { seen: true }));
+        await batch.commit();
     },
 
     // ── REAL-TIME LISTENERS ───────────────────────────────────────────
 
-    /**
-     * Subscribe to real-time message updates.
-     * @param {Function} callback — called with the full messages array on every change
-     * @returns {Function} unsubscribe function
-     */
     onMessages(callback) {
-        const q = query(messagesCol, orderBy("time", "asc"));
-        return onSnapshot(q, (snap) => {
+        return db.collection("messages").onSnapshot((snap) => {
             const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Client-side sort to ensure messages appear in order
+            msgs.sort((a,b) => new Date(a.time) - new Date(b.time));
             callback(msgs);
         });
     },
 
-    /**
-     * Subscribe to real-time user updates.
-     * @param {Function} callback — called with the full users array on every change
-     * @returns {Function} unsubscribe function
-     */
     onUsers(callback) {
-        return onSnapshot(usersCol, (snap) => {
+        return db.collection("users").onSnapshot((snap) => {
             const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             callback(users);
         });
