@@ -94,10 +94,10 @@ function startLiveAttendanceListener(sessionId) {
             }
             
             tr.innerHTML = `
-                <td>${timeStr}</td>
                 <td>${data.studentId || '-'}</td>
                 <td>${data.name || '-'}</td>
                 <td>${data.division || '-'}</td>
+                <td>${timeStr}</td>
             `;
             attendanceList.appendChild(tr);
         });
@@ -123,7 +123,7 @@ exportCsvBtn.addEventListener('click', () => {
     
     // Create CSV content
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Time,Student ID,Name,Division\n";
+    csvContent += "Student ID,Name,Division,Time\n";
     
     attendanceData.forEach(row => {
         let timeStr = "";
@@ -136,7 +136,7 @@ exportCsvBtn.addEventListener('click', () => {
         const safeName = `"${row.name || ''}"`;
         const safeDiv = `"${row.division || ''}"`;
         
-        csvContent += `"${timeStr}",${safeId},${safeName},${safeDiv}\n`;
+        csvContent += `${safeId},${safeName},${safeDiv},"${timeStr}"\n`;
     });
     
     // Create download link
