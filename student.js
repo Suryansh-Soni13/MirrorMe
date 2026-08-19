@@ -106,9 +106,9 @@ async function submitAttendance(sessionId) {
         await addDoc(collection(db, 'attendance'), {
             sessionId: sessionId,
             studentUid: auth.currentUser.uid,
-            studentId: currentStudent.studentId,
-            name: currentStudent.name,
-            division: currentStudent.division,
+            studentId: currentStudent.studentId || "Unknown ID",
+            name: currentStudent.name || "Unknown Name",
+            division: currentStudent.division || "Unknown Div",
             timestamp: serverTimestamp()
         });
         

@@ -39,7 +39,10 @@ async function handleLogin() {
         await signInWithPopup(auth, provider);
     } catch (error) {
         console.error("Login Error:", error);
-        alert("Login failed: " + error.message);
+        // Don't show an ugly alert if the user just closed the popup intentionally
+        if (error.code !== 'auth/popup-closed-by-user') {
+            alert("Login failed: " + error.message);
+        }
         loginSection.classList.remove('hidden');
         loadingIndicator.classList.add('hidden');
     }
