@@ -15,16 +15,22 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
     
-    // Load student profile
-    const studentRef = doc(db, 'students', user.uid);
-    const snap = await getDoc(studentRef);
-    if (snap.exists()) {
-        currentStudent = snap.data();
-        studentNameEl.innerText = currentStudent.name;
-        initScanner();
-    } else {
-        alert("Student profile not found. Please register.");
-        window.location.href = 'index.html';
+    try {
+        // Load student profile
+        const studentRef = doc(db, 'students', user.uid);
+        const snap = await getDoc(studentRef);
+        if (snap.exists()) {
+            currentStudent = snap.data();
+            studentNameEl.innerText = currentStudent.name;
+            initScanner();
+        } else {
+            alert("Student profile not found. Please register.");
+            window.location.href = 'index.html';
+        }
+    } catch (error) {
+        console.error("Critical Error Loading Profile:", error);
+        alert("Error loading profile from database: " + error.message + "\n\nMake sure your Firestore rules are correct!");
+        document.getElementById('student-name').innerText = "ERROR";
     }
 });
 

@@ -64,6 +64,12 @@ button {
     margin: 10px 0;
 }
 
+.header button {
+    width: auto;
+    padding: 8px 16px;
+    margin: 0;
+}
+
 button:hover { background-color: var(--primary-hover); }
 
 .secondary-btn {
