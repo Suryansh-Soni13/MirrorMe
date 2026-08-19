@@ -1,0 +1,112 @@
+:root {
+    --primary: #4285F4;
+    --primary-hover: #3367d6;
+    --danger: #ea4335;
+    --success: #34a853;
+    --bg: #f8f9fa;
+    --text: #202124;
+    --border: #dadce0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+h1, h2, h3 {
+    text-align: center;
+    margin-top: 0;
+}
+
+.header h2 { margin: 0; }
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 10px 0;
+}
+
+button:hover { background-color: var(--primary-hover); }
+
+.secondary-btn {
+    background-color: white;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+.secondary-btn:hover {
+    background-color: #f1f3f4;
+}
+
+.danger-btn { background-color: var(--danger); }
+.danger-btn:hover { background-color: #c5221f; }
+
+.success-btn { background-color: var(--success); }
+.success-btn:hover { background-color: #1e8e3e; }
+
+.hidden { display: none !important; }
+
+#loading-indicator {
+    text-align: center;
+    margin-top: 20px;
+    font-style: italic;
+    color: #5f6368;
+}
+
+.student-details {
+    background: #f1f3f4;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    border: 1px solid var(--border);
+    padding: 8px;
+    text-align: left;
+}
+
+th { background-color: #f1f3f4; }

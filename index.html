@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Attendance - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Firebase modular SDKs are loaded in JS -->
+</head>
+<body>
+    <div class="container">
+        <h1>College QR Attendance</h1>
+        <div id="login-section">
+            <p>Please log in with your College Google Account.</p>
+            <button id="google-login-btn">Login with Google</button>
+            <div style="margin-top:20px;">
+                <p>Are you a faculty member?</p>
+                <button id="faculty-login-btn" class="secondary-btn">Faculty Login</button>
+            </div>
+        </div>
+
+        <div id="registration-section" class="hidden">
+            <h2>Complete Registration</h2>
+            <form id="registration-form">
+                <input type="text" id="reg-name" placeholder="Full Name" required>
+                <input type="text" id="reg-student-id" placeholder="Student ID (Roll No)" required>
+                <input type="text" id="reg-division" placeholder="Division / Class" required>
+                <button type="submit">Save Profile</button>
+            </form>
+        </div>
+
+        <div id="loading-indicator" class="hidden">Loading...</div>
+    </div>
+    
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/auth.js"></script>
+</body>
+</html>

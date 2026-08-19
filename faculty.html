@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container" style="max-width: 800px;">
+        <div class="header">
+            <h2>Faculty Dashboard</h2>
+            <button id="logout-btn" class="danger-btn">Logout</button>
+        </div>
+
+        <div id="session-setup">
+            <h3>Create Attendance Session</h3>
+            <form id="create-session-form">
+                <input type="text" id="session-subject" placeholder="Subject / Event Name" required>
+                <input type="text" id="session-division" placeholder="Target Division(s)" required>
+                <button type="submit">Generate QR Code</button>
+            </form>
+        </div>
+
+        <div id="active-session" class="hidden">
+            <h3>Active Session: <span id="active-subject"></span></h3>
+            <div id="qrcode" style="margin: 20px auto; display: flex; justify-content: center;"></div>
+            
+            <div class="live-dashboard">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Live Attendance</h3>
+                    <button id="export-csv-btn" class="success-btn">Export to CSV / Excel</button>
+                </div>
+                <table id="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Division</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-list">
+                        <!-- Live data goes here -->
+                    </tbody>
+                </table>
+                <button id="end-session-btn" class="danger-btn" style="margin-top: 20px;">End Session</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- QRCode Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/faculty.js"></script>
+</body>
+</html>

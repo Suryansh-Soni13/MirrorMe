@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - QR Scanner</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Welcome, <span id="student-name">...</span></h2>
+            <button id="logout-btn" class="danger-btn">Logout</button>
+        </div>
+        
+        <div id="scanner-section">
+            <h3>Scan Attendance QR</h3>
+            <div id="qr-reader" style="width: 100%; max-width: 400px; margin: auto;"></div>
+        </div>
+
+        <div id="success-section" class="hidden">
+            <h2 style="color: #4CAF50;">Scan Successful!</h2>
+            <div class="student-details">
+                <p><strong>Name:</strong> <span id="display-name"></span></p>
+                <p><strong>ID:</strong> <span id="display-id"></span></p>
+                <p><strong>Division:</strong> <span id="display-div"></span></p>
+            </div>
+            <p id="countdown-text">Submitting attendance in <span id="timer">3</span> seconds...</p>
+            <h3 id="attendance-done" class="hidden" style="color: #4CAF50;">■ Attendance Done</h3>
+        </div>
+        
+        <div id="loading-indicator" class="hidden">Processing...</div>
+    </div>
+    
+    <!-- HTML5 QR Code Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/student.js"></script>
+</body>
+</html>
