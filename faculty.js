@@ -70,9 +70,20 @@ function startLiveAttendanceListener(sessionId) {
         attendanceData = [];
         
         snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            attendanceData.push(data);
-            
+            attendanceData.push(docSnap.data());
+        });
+
+        // Sort automatically by Student ID (e.g. 26MCA001 -> 26MCA190)
+        attendanceData.sort((a, b) => {
+            let idA = (a.studentId || "").toUpperCase();
+            let idB = (b.studentId || "").toUpperCase();
+            if (idA < idB) return -1;
+            if (idA > idB) return 1;
+            return 0;
+        });
+        
+        // Render rows
+        attendanceData.forEach((data) => {
             const tr = document.createElement('tr');
             
             // Format time safely (handle serverTimestamp delay)
