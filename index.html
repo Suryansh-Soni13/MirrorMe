@@ -3,36 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Attendance - Login</title>
-    <link rel="stylesheet" href="style.css">
+    <title>CHARUSAT Attendance - CAUE 501</title>
+    <link rel="stylesheet" href="css/style.css">
     <!-- Firebase modular SDKs are loaded in JS -->
 </head>
 <body>
     <div class="container">
-        <h1> CAUE 501 - Cloud Computing QR Attendance</h1>
-        <div id="login-section">
-            <p>Please log in with your Charusat Google Account.</p>
-            <button id="google-login-btn">Login with Google</button>
-            <div style="margin-top:20px;">
-                <p>Are you a faculty member?</p>
-                <button id="faculty-login-btn" class="secondary-btn">Faculty Login</button>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: var(--primary); margin-bottom: 5px;">☁️ CAUE 501</h1>
+            <h3 style="color: #5f6368; margin-top: 0; font-weight: 500;">Cloud Computing Attendance</h3>
+        </div>
+        
+        <div id="login-section" style="text-align: center;">
+            <p style="font-size: 16px; margin-bottom: 25px;">Welcome! Please log in to mark your attendance.</p>
+            <button id="google-login-btn" style="display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; padding: 12px; background-color: #fff; color: #3c4043; border: 1px solid #dadce0; box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3); border-radius: 24px;">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="width: 20px; height: 20px;">
+                Sign in with CHARUSAT Email
+            </button>
+            
+            <div style="margin-top:40px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <p style="font-size: 14px; color: #5f6368; margin-bottom: 10px;">For Instructors</p>
+                <button id="faculty-login-btn" class="secondary-btn" style="padding: 10px; font-size: 14px;">Faculty Login</button>
             </div>
         </div>
 
         <div id="registration-section" class="hidden">
-            <h2>Complete Registration</h2>
+            <h2 style="color: var(--primary);">👤 Complete Profile</h2>
+            <p style="text-align: center; color: #5f6368; font-size: 14px; margin-bottom: 20px;">We just need a few details before you can mark attendance.</p>
             <form id="registration-form">
-                <input type="text" id="reg-name" placeholder="Full Name" required>
-                <input type="text" id="reg-student-id" placeholder="Student ID (Roll No)" required>
-                <input type="text" id="reg-division" placeholder="Division / Class" required>
-                <button type="submit">Save Profile</button>
+                <label style="font-size: 13px; font-weight: bold; color: #5f6368;">Full Name</label>
+                <input type="text" id="reg-name" placeholder="E.g., Jane Doe" required>
+                
+                <label style="font-size: 13px; font-weight: bold; color: #5f6368; margin-top: 10px; display: block;">Student ID / Roll No</label>
+                <input type="text" id="reg-student-id" placeholder="E.g., 26MCA001" required>
+                
+                <label style="font-size: 13px; font-weight: bold; color: #5f6368; margin-top: 10px; display: block;">Division</label>
+                <input type="text" id="reg-division" list="divisions-list" placeholder="Select or type your division" required>
+                <datalist id="divisions-list">
+                    <option value="Division 1, 2 & 3">
+                    <option value="DIV 1">
+                    <option value="DIV 2">
+                    <option value="DIV 3">
+                </datalist>
+                
+                <button type="submit" style="margin-top: 25px; padding: 14px; font-size: 16px;">Save Profile & Continue</button>
             </form>
         </div>
 
         <div id="loading-indicator" class="hidden">Loading...</div>
     </div>
     
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="auth.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/auth.js"></script>
 </body>
 </html>

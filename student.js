@@ -1,6 +1,6 @@
 import { auth, db, signOut, onAuthStateChanged, doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from './firebase-config.js';
 
-let html5QrcodeScanner = null;
+let html5Qrcode = null;
 let currentStudent = null;
 
 const studentNameEl = document.getElementById('student-name');
@@ -39,15 +39,50 @@ logoutBtn.addEventListener('click', () => {
 });
 
 function initScanner() {
-    // We configure it to ONLY use the live camera (no image uploads) to prevent cheating
-    html5QrcodeScanner = new Html5QrcodeScanner(
-        "qr-reader", { 
-            fps: 10, 
-            qrbox: 250,
-            supportedScanTypes: [0] // 0 = SCAN_TYPE_CAMERA
+    // Configure to ONLY use back camera and lower FPS to save data/battery, access faster
+    html5Qrcode = new Html5Qrcode("qr-reader");
+    html5Qrcode.start(
+        { facingMode: "environment" },
+        {
+            fps: 5,
+            qrbox: { width: 250, height: 250 }
+        },
+        onScanSuccess,
+        onScanError
+    ).then(() => {
+        setupZoom();
+    }).catch(err => {
+        console.error("Error starting camera: ", err);
+        alert("Camera error: Please ensure you have granted camera permissions and are using a compatible browser.");
+    });
+}
+
+function setupZoom() {
+    setTimeout(() => {
+        const video = document.querySelector('#qr-reader video');
+        if (video && video.srcObject) {
+            const track = video.srcObject.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            if (capabilities.zoom) {
+                const zoomControls = document.getElementById('zoom-controls');
+                const zoomSlider = document.getElementById('zoom-slider');
+                if(zoomControls && zoomSlider) {
+                    zoomControls.classList.remove('hidden');
+                    zoomSlider.min = capabilities.zoom.min;
+                    zoomSlider.max = capabilities.zoom.max;
+                    zoomSlider.step = capabilities.zoom.step;
+                    zoomSlider.value = track.getSettings().zoom || 1;
+                    zoomSlider.addEventListener('input', () => {
+                        try {
+                            track.applyConstraints({ advanced: [ { zoom: zoomSlider.value } ] });
+                        } catch(e) {
+                            console.warn("Zoom not supported on this device", e);
+                        }
+                    });
+                }
+            }
         }
-    );
-    html5QrcodeScanner.render(onScanSuccess, onScanError);
+    }, 1000);
 }
 
 function onScanError(errorMessage) {
@@ -55,8 +90,8 @@ function onScanError(errorMessage) {
 }
 
 async function onScanSuccess(decodedText, decodedResult) {
-    if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear(); // Stop scanning
+    if (html5Qrcode) {
+        html5Qrcode.stop().catch(err => console.error(err));
     }
     
     const sessionId = decodedText.trim();

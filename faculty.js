@@ -90,14 +90,14 @@ function startLiveAttendanceListener(sessionId) {
             let timeStr = "Pending...";
             if (data.timestamp) {
                 const date = data.timestamp.toDate();
-                timeStr = date.toLocaleTimeString();
+                timeStr = date.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
             }
             
             tr.innerHTML = `
-                <td>${data.studentId || '-'}</td>
+                <td style="font-weight: 500;">${data.studentId || '-'}</td>
                 <td>${data.name || '-'}</td>
-                <td>${data.division || '-'}</td>
-                <td>${timeStr}</td>
+                <td><span style="background: #e8f0fe; color: #1967d2; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">${data.division || '-'}</span></td>
+                <td style="font-family: monospace;">${timeStr}</td>
             `;
             attendanceList.appendChild(tr);
         });
@@ -128,7 +128,9 @@ exportCsvBtn.addEventListener('click', () => {
     attendanceData.forEach(row => {
         let timeStr = "";
         if (row.timestamp) {
-            timeStr = row.timestamp.toDate().toLocaleString();
+            const d = row.timestamp.toDate();
+            // Accurate timestamp for CSV: YYYY-MM-DD HH:MM:SS
+            timeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
         }
         
         // Escape quotes and commas

@@ -3,21 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <title>CAUE 501 Faculty Panel</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container" style="max-width: 800px;">
         <div class="header">
-            <h2>Faculty Dashboard</h2>
+            <h2>CAUE 501 Faculty Panel</h2>
             <button id="logout-btn" class="danger-btn">Logout</button>
         </div>
 
         <div id="session-setup">
             <h3>Create Attendance Session</h3>
             <form id="create-session-form">
-                <input type="text" id="session-subject" placeholder="Subject / Event Name" required>
-                <input type="text" id="session-division" placeholder="Target Division(s)" required>
+                <input type="text" id="session-subject" value="CAUE 501 Cloud Computing" required>
+                <input type="text" id="session-division" list="divisions-list" placeholder="Select or Type Division" value="Division 1, 2 & 3" required>
+                <datalist id="divisions-list">
+                    <option value="Division 1, 2 & 3">
+                    <option value="DIV 1">
+                    <option value="DIV 2">
+                    <option value="DIV 3">
+                </datalist>
                 <button type="submit">Generate QR Code</button>
             </form>
         </div>
@@ -51,7 +57,7 @@
     
     <!-- QRCode Generator Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="faculty.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/faculty.js"></script>
 </body>
 </html>
