@@ -1,42 +1,27 @@
-import { auth, db, signOut, doc, updateDoc, collection, addDoc, query, where, onSnapshot, getDocs, serverTimestamp } from './firebase-config.js';
-import { requireRole } from './role-manager.js';
+import { auth, db, signOut, onAuthStateChanged, collection, addDoc, query, where, onSnapshot, serverTimestamp } from './firebase-config.js';
 
 let currentSessionId = null;
 let unsubscribeAttendance = null;
-let attendanceData = []; 
-
-// Restrict access to faculty only
-requireRole('faculty');
+let attendanceData = []; // Store for CSV export
 
 const logoutBtn = document.getElementById('logout-btn');
 const createSessionForm = document.getElementById('create-session-form');
-const dashboardMain = document.getElementById('dashboard-main');
+const sessionSetup = document.getElementById('session-setup');
 const activeSession = document.getElementById('active-session');
 const activeSubjectEl = document.getElementById('active-subject');
 const attendanceList = document.getElementById('attendance-list');
-const presentCountEl = document.getElementById('present-count');
 const endSessionBtn = document.getElementById('end-session-btn');
 const exportCsvBtn = document.getElementById('export-csv-btn');
 
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        loadFacultyStats(user.uid);
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location.href = 'index.html';
     }
 });
 
 logoutBtn.addEventListener('click', () => {
     signOut(auth);
 });
-
-async function loadFacultyStats(uid) {
-    try {
-        const q = query(collection(db, 'sessions'), where('facultyUid', '==', uid));
-        const snapshot = await getDocs(q);
-        document.getElementById('total-sessions-stat').innerText = snapshot.size;
-    } catch(e) {
-        console.error("Failed to load stats", e);
-    }
-}
 
 createSessionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -56,18 +41,16 @@ createSessionForm.addEventListener('submit', async (e) => {
         currentSessionId = sessionRef.id;
         
         // Show Active Session View
-        dashboardMain.classList.add('hidden');
+        sessionSetup.classList.add('hidden');
         activeSession.classList.remove('hidden');
         activeSubjectEl.innerText = `${subject} (${division})`;
         
         // Generate QR Code
-        document.getElementById('qrcode').innerHTML = '';
+        document.getElementById('qrcode').innerHTML = ''; // clear previous
         new QRCode(document.getElementById("qrcode"), {
-            text: currentSessionId, // A dynamic rotating token could go here if backed by cloud functions
+            text: currentSessionId,
             width: 256,
-            height: 256,
-            colorDark : "#1a73e8",
-            colorLight : "#ffffff",
+            height: 256
         });
         
         startLiveAttendanceListener(currentSessionId);
@@ -79,34 +62,31 @@ createSessionForm.addEventListener('submit', async (e) => {
 });
 
 function startLiveAttendanceListener(sessionId) {
-    attendanceData = [];
+    attendanceData = []; // reset
     const q = query(collection(db, 'attendance'), where('sessionId', '==', sessionId));
     
     unsubscribeAttendance = onSnapshot(q, (snapshot) => {
-        attendanceList.innerHTML = ''; 
+        attendanceList.innerHTML = ''; // clear table
         attendanceData = [];
         
         snapshot.forEach((docSnap) => {
             attendanceData.push(docSnap.data());
         });
 
-        presentCountEl.innerText = attendanceData.length;
-
-        if (attendanceData.length === 0) {
-            attendanceList.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #888;">Waiting for students...</td></tr>';
-            return;
-        }
-
-        // Sort by Student ID
+        // Sort automatically by Student ID (e.g. 26MCA001 -> 26MCA190)
         attendanceData.sort((a, b) => {
             let idA = (a.studentId || "").toUpperCase();
             let idB = (b.studentId || "").toUpperCase();
-            return idA.localeCompare(idB);
+            if (idA < idB) return -1;
+            if (idA > idB) return 1;
+            return 0;
         });
         
+        // Render rows
         attendanceData.forEach((data) => {
             const tr = document.createElement('tr');
             
+            // Format time safely (handle serverTimestamp delay)
             let timeStr = "Pending...";
             if (data.timestamp) {
                 const date = data.timestamp.toDate();
@@ -114,52 +94,34 @@ function startLiveAttendanceListener(sessionId) {
             }
             
             tr.innerHTML = `
-                <td style="font-weight: bold; font-family: monospace;">${data.studentId || '-'}</td>
+                <td style="font-weight: 500;">${data.studentId || '-'}</td>
                 <td>${data.name || '-'}</td>
-                <td><span style="background: #e8f0fe; color: #1967d2; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">${data.division || '-'}</span></td>
-                <td style="font-family: monospace; font-size: 0.9em; color: #555;">${timeStr}</td>
+                <td><span style="background: #e8f0fe; color: #1967d2; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">${data.division || '-'}</span></td>
+                <td style="font-family: monospace;">${timeStr}</td>
             `;
             attendanceList.appendChild(tr);
         });
     });
 }
 
-endSessionBtn.addEventListener('click', async () => {
-    if (!confirm("Are you sure you want to close this session? Students will no longer be able to mark attendance.")) return;
-
-    try {
-        // Mark session as inactive in Firestore. 
-        // This triggers Firestore rules to reject any new attendance submissions.
-        if (currentSessionId) {
-            await updateDoc(doc(db, 'sessions', currentSessionId), {
-                active: false,
-                closedAt: serverTimestamp()
-            });
-        }
-    } catch(e) {
-        console.error("Error closing session", e);
-        alert("Failed to close session properly.");
-    }
-
+endSessionBtn.addEventListener('click', () => {
     if (unsubscribeAttendance) {
         unsubscribeAttendance();
     }
     currentSessionId = null;
     activeSession.classList.add('hidden');
-    dashboardMain.classList.remove('hidden');
+    sessionSetup.classList.remove('hidden');
     document.getElementById('create-session-form').reset();
     document.getElementById('qrcode').innerHTML = '';
-    
-    // Refresh stats
-    if(auth.currentUser) loadFacultyStats(auth.currentUser.uid);
 });
 
 exportCsvBtn.addEventListener('click', () => {
     if (attendanceData.length === 0) {
-        alert("No attendance data to export.");
+        alert("No attendance data to export yet.");
         return;
     }
     
+    // Create CSV content
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Student ID,Name,Division,Time\n";
     
@@ -167,9 +129,11 @@ exportCsvBtn.addEventListener('click', () => {
         let timeStr = "";
         if (row.timestamp) {
             const d = row.timestamp.toDate();
+            // Accurate timestamp for CSV: YYYY-MM-DD HH:MM:SS
             timeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
         }
         
+        // Escape quotes and commas
         const safeId = `"${row.studentId || ''}"`;
         const safeName = `"${row.name || ''}"`;
         const safeDiv = `"${row.division || ''}"`;
@@ -177,12 +141,15 @@ exportCsvBtn.addEventListener('click', () => {
         csvContent += `${safeId},${safeName},${safeDiv},"${timeStr}"\n`;
     });
     
+    // Create download link
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
+    
     const filename = `Attendance_${activeSubjectEl.innerText.replace(/[^a-z0-9]/gi, '_')}.csv`;
     link.setAttribute("download", filename);
-    document.body.appendChild(link);
+    
+    document.body.appendChild(link); // Required for FF
     link.click();
     document.body.removeChild(link);
 });

@@ -1,15 +1,14 @@
-import { auth, db, provider, signInWithPopup, doc, getDoc, setDoc, onAuthStateChanged, serverTimestamp } from './firebase-config.js';
-import { getUserRole } from './role-manager.js';
+import { auth, db, provider, signInWithPopup, doc, getDoc, setDoc, onAuthStateChanged } from './firebase-config.js';
 
 const loginBtn = document.getElementById('google-login-btn');
 const facultyLoginBtn = document.getElementById('faculty-login-btn');
-const adminLoginBtn = document.getElementById('admin-login-btn'); // Optional, if we add it
 const loginSection = document.getElementById('login-section');
 const registrationSection = document.getElementById('registration-section');
 const registrationForm = document.getElementById('registration-form');
 const loadingIndicator = document.getElementById('loading-indicator');
 
 let currentUser = null;
+let pendingFacultyLogin = false;
 
 // Listen for auth state changes
 onAuthStateChanged(auth, async (user) => {
@@ -23,19 +22,13 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-if (facultyLoginBtn) {
-    facultyLoginBtn.addEventListener('click', () => {
-        handleLogin();
-    });
-}
-
-if (adminLoginBtn) {
-    adminLoginBtn.addEventListener('click', () => {
-        handleLogin();
-    });
-}
+facultyLoginBtn.addEventListener('click', () => {
+    pendingFacultyLogin = true;
+    handleLogin();
+});
 
 loginBtn.addEventListener('click', () => {
+    pendingFacultyLogin = false;
     handleLogin();
 });
 
@@ -46,6 +39,7 @@ async function handleLogin() {
         await signInWithPopup(auth, provider);
     } catch (error) {
         console.error("Login Error:", error);
+        // Don't show an ugly alert if the user just closed the popup intentionally
         if (error.code !== 'auth/popup-closed-by-user') {
             alert("Login failed: " + error.message);
         }
@@ -56,47 +50,30 @@ async function handleLogin() {
 
 async function checkUserProfile(user) {
     try {
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
+        // If it's a faculty login, we expect a different flow, but for simplicity
+        // let's just check if they are in the 'faculty' collection or if they just want to go to faculty dashboard.
+        if (pendingFacultyLogin) {
+            // In a real app, verify they are faculty in DB. For now, route directly.
+            window.location.href = 'faculty.html';
+            return;
+        }
 
-        if (userSnap.exists()) {
-            // Profile exists, route based on actual database role
-            const role = userSnap.data().role || 'student';
-            routeUser(role);
+        const studentRef = doc(db, 'students', user.uid);
+        const studentSnap = await getDoc(studentRef);
+
+        if (studentSnap.exists()) {
+            // Profile exists, go to scanner
+            window.location.href = 'student.html';
         } else {
-            // Check legacy 'students' collection for backward compatibility
-            const legacyRef = doc(db, 'students', user.uid);
-            const legacySnap = await getDoc(legacyRef);
-            
-            if (legacySnap.exists()) {
-                // Migrate legacy student to new users collection
-                const data = legacySnap.data();
-                await setDoc(userRef, {
-                    ...data,
-                    role: 'student' // Force role to student
-                });
-                routeUser('student');
-            } else {
-                // Show registration form for new students
-                loadingIndicator.classList.add('hidden');
-                registrationSection.classList.remove('hidden');
-                document.getElementById('reg-name').value = user.displayName || '';
-            }
+            // Show registration form
+            loadingIndicator.classList.add('hidden');
+            registrationSection.classList.remove('hidden');
+            document.getElementById('reg-name').value = user.displayName || '';
         }
     } catch (error) {
         console.error("Error checking profile:", error);
         loadingIndicator.classList.add('hidden');
         loginSection.classList.remove('hidden');
-    }
-}
-
-function routeUser(role) {
-    if (role === 'faculty') {
-        window.location.href = 'faculty.html';
-    } else if (role === 'admin') {
-        window.location.href = 'admin.html';
-    } else {
-        window.location.href = 'student.html';
     }
 }
 
@@ -112,14 +89,12 @@ registrationForm.addEventListener('submit', async (e) => {
     const division = document.getElementById('reg-division').value;
 
     try {
-        // Create in 'users' collection instead of 'students'
-        await setDoc(doc(db, 'users', currentUser.uid), {
+        await setDoc(doc(db, 'students', currentUser.uid), {
             name: name,
             studentId: studentId,
             division: division,
             email: currentUser.email,
-            role: 'student', // explicitly set role to student
-            createdAt: serverTimestamp()
+            createdAt: new Date()
         });
         window.location.href = 'student.html';
     } catch (error) {

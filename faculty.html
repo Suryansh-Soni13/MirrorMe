@@ -3,105 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MirrorMee - Faculty Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <title>CAUE 501 Faculty Panel</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container" style="max-width: 800px;">
         <div class="header">
-            <div>
-                <h2 style="margin: 0; color: #5f6368;">Faculty Portal</h2>
-                <div style="font-size: 13px; color: #888; margin-top: 4px;">Manage Attendance Sessions</div>
-            </div>
-            <button id="logout-btn" class="danger-btn" style="padding: 8px 16px; font-size: 12px; width: auto;">Logout</button>
+            <h2>CAUE 501 Faculty Panel</h2>
+            <button id="logout-btn" class="danger-btn">Logout</button>
         </div>
 
-        <div id="dashboard-main">
-            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-                <div class="stat-card" style="flex: 1; background: #e8f0fe; padding: 15px; border-radius: 12px;">
-                    <div style="font-size: 12px; color: #1967d2; font-weight: bold;">TOTAL SESSIONS</div>
-                    <div id="total-sessions-stat" style="font-size: 24px; font-weight: bold; color: #174ea6;">-</div>
-                </div>
-            </div>
-
-            <div id="session-setup" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                <h3 style="margin-top: 0;">Create New Session</h3>
-                <form id="create-session-form">
-                    <div style="display: flex; gap: 15px;">
-                        <div style="flex: 2;">
-                            <label style="font-size: 12px; font-weight: bold; color: #5f6368;">Subject</label>
-                            <input type="text" id="session-subject" placeholder="E.g. CAUE 501 Cloud Computing" required>
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="font-size: 12px; font-weight: bold; color: #5f6368;">Division</label>
-                            <input type="text" id="session-division" list="divisions-list" placeholder="Division" required>
-                            <datalist id="divisions-list">
-                                <option value="Division 1, 2 & 3">
-                                <option value="DIV 1">
-                                <option value="DIV 2">
-                                <option value="DIV 3">
-                            </datalist>
-                        </div>
-                    </div>
-                    <button type="submit" style="margin-top: 10px;">Start Session & Generate QR</button>
-                </form>
-            </div>
-
-            <!-- List of past sessions could go here -->
+        <div id="session-setup">
+            <h3>Create Attendance Session</h3>
+            <form id="create-session-form">
+                <input type="text" id="session-subject" value="CAUE 501 Cloud Computing" required>
+                <input type="text" id="session-division" list="divisions-list" placeholder="Select or Type Division" value="Division 1, 2 & 3" required>
+                <datalist id="divisions-list">
+                    <option value="Division 1, 2 & 3">
+                    <option value="DIV 1">
+                    <option value="DIV 2">
+                    <option value="DIV 3">
+                </datalist>
+                <button type="submit">Generate QR Code</button>
+            </form>
         </div>
 
         <div id="active-session" class="hidden">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #fff3e0; padding: 15px; border-radius: 12px; border: 1px solid #ffe0b2;">
-                <div>
-                    <h3 style="margin: 0; color: #e65100;">🔴 LIVE: <span id="active-subject"></span></h3>
-                    <div style="font-size: 13px; color: #f57c00; margin-top: 4px;">Students can scan to mark attendance now.</div>
+            <h3>Active Session: <span id="active-subject"></span></h3>
+            <div id="qrcode" style="margin: 20px auto; display: flex; justify-content: center;"></div>
+            
+            <div class="live-dashboard">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Live Attendance</h3>
+                    <button id="export-csv-btn" class="success-btn">Export to CSV / Excel</button>
                 </div>
-                <button id="end-session-btn" class="danger-btn" style="width: auto; margin: 0;">Close Session</button>
-            </div>
-
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <!-- QR Code Section -->
-                <div style="flex: 1; min-width: 300px; text-align: center; background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                    <h4 style="margin-top: 0;">Session QR Code</h4>
-                    <div id="qrcode" style="margin: 0 auto; display: flex; justify-content: center; background: white; padding: 15px; border-radius: 8px; border: 2px dashed var(--border);"></div>
-                    <p style="font-size: 12px; color: #888; margin-top: 15px;">Project this code for students to scan.</p>
-                </div>
-
-                <!-- Live Attendance Section -->
-                <div class="live-dashboard" style="flex: 2; min-width: 400px; background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 10px;">
-                        <h4 style="margin: 0;">Present: <span id="present-count" style="color: var(--primary);">0</span></h4>
-                        <button id="export-csv-btn" class="success-btn" style="width: auto; padding: 6px 12px; font-size: 12px; margin: 0;">Export CSV</button>
-                    </div>
-                    
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <table id="attendance-table" style="margin-top: 0;">
-                            <thead style="position: sticky; top: 0; z-index: 1;">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Div</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="attendance-list">
-                                <!-- Live data goes here -->
-                                <tr><td colspan="4" style="text-align: center; color: #888;">Waiting for students...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <table id="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Division</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-list">
+                        <!-- Live data goes here -->
+                    </tbody>
+                </table>
+                <button id="end-session-btn" class="danger-btn" style="margin-top: 20px;">End Session</button>
             </div>
         </div>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #888;">
-        Developed By Suryansh Soni - 26MCA172 & Dhruv Bhavsar - 26MCA024
     </div>
     
     <!-- QRCode Generator Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="faculty.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/faculty.js"></script>
 </body>
 </html>
