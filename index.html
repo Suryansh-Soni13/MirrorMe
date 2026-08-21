@@ -3,33 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHARUSAT Attendance - CAUE 501</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Firebase modular SDKs are loaded in JS -->
+    <title>MirrorMee - Attendance System</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="color: var(--primary); margin-bottom: 5px;">☁️ CAUE 501</h1>
-            <h3 style="color: #5f6368; margin-top: 0; font-weight: 500;">Cloud Computing Attendance</h3>
+    <div class="container" style="max-width: 450px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: var(--primary); margin-bottom: 5px; font-size: 2.2rem;">☁️ MirrorMee</h1>
+            <h3 style="color: #5f6368; margin-top: 0; font-weight: 500;">Secure Attendance Platform</h3>
         </div>
         
         <div id="login-section" style="text-align: center;">
-            <p style="font-size: 16px; margin-bottom: 25px;">Welcome! Please log in to mark your attendance.</p>
-            <button id="google-login-btn" style="display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; padding: 12px; background-color: #fff; color: #3c4043; border: 1px solid #dadce0; box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3); border-radius: 24px;">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="width: 20px; height: 20px;">
-                Sign in with CHARUSAT Email
+            <p style="font-size: 15px; margin-bottom: 30px; color: #3c4043;">Welcome! Please log in to continue.</p>
+            
+            <button id="google-login-btn" style="display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; padding: 14px; background-color: #fff; color: #3c4043; border: 1px solid #dadce0; box-shadow: 0 1px 3px 0 rgba(60,64,67,0.15); border-radius: 8px; width: 100%; cursor: pointer;">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="width: 24px; height: 24px;">
+                <span style="font-weight: 500;">Sign in with Institutional Email</span>
             </button>
             
             <div style="margin-top:40px; padding-top: 20px; border-top: 1px solid var(--border);">
-                <p style="font-size: 14px; color: #5f6368; margin-bottom: 10px;">For Instructors</p>
-                <button id="faculty-login-btn" class="secondary-btn" style="padding: 10px; font-size: 14px;">Faculty Login</button>
+                <p style="font-size: 13px; color: #888; line-height: 1.5;">
+                    Role-based access is enforced securely. Students, Faculty, and Admins all sign in here and will be automatically routed to their respective dashboards.
+                </p>
             </div>
         </div>
 
         <div id="registration-section" class="hidden">
-            <h2 style="color: var(--primary);">👤 Complete Profile</h2>
-            <p style="text-align: center; color: #5f6368; font-size: 14px; margin-bottom: 20px;">We just need a few details before you can mark attendance.</p>
+            <h2 style="color: var(--primary); margin-bottom: 5px;">👤 Complete Profile</h2>
+            <p style="text-align: center; color: #5f6368; font-size: 14px; margin-bottom: 25px;">We just need a few details before you can mark attendance.</p>
             <form id="registration-form">
                 <label style="font-size: 13px; font-weight: bold; color: #5f6368;">Full Name</label>
                 <input type="text" id="reg-name" placeholder="E.g., Jane Doe" required>
@@ -50,10 +51,21 @@
             </form>
         </div>
 
-        <div id="loading-indicator" class="hidden">Loading...</div>
+        <div id="loading-indicator" class="hidden" style="text-align: center; margin-top: 20px;">
+            <div style="display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(26,115,232,0.3); border-radius: 50%; border-top-color: var(--primary); animation: spin 1s ease-in-out infinite;"></div>
+            <p style="color: #5f6368; font-size: 14px; margin-top: 10px;">Authenticating...</p>
+        </div>
     </div>
     
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="auth.js"></script>
+    <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #888;">
+        Developed By Suryansh Soni - 26MCA172 & Dhruv Bhavsar - 26MCA024
+    </div>
+    
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/auth.js"></script>
 </body>
 </html>

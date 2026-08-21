@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      let docExists = exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      if (!docExists) {
+        return 'student';
+      }
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return 'role' in userData ? userData.role : 'student';
+    }
+
+    function isFaculty() {
+      return isAuthenticated() && getUserRole() == 'faculty';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+
+    function isStudent() {
+      return isAuthenticated() && getUserRole() == 'student';
+    }
+
+    // USERS COLLECTION
+    // Merging 'students' and 'faculty' into a single 'users' collection for role management
+    match /users/{userId} {
+      // Users can read their own profile. Faculty/Admins can read all profiles.
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isFaculty() || isAdmin());
+      
+      // Users can create their own profile.
+      allow create: if isAuthenticated() && request.auth.uid == userId 
+                    // Prevent users from granting themselves elevated roles during creation
+                    && (!('role' in request.resource.data) || request.resource.data.role == 'student');
+      
+      // Users can update their own profile (but not their role). Admins can update any profile.
+      allow update: if isAuthenticated() && (
+                      (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])) 
+                      || isAdmin()
+                    );
+      
+      allow delete: if isAdmin();
+    }
+
+    // SESSIONS COLLECTION
+    match /sessions/{sessionId} {
+      // Anyone authenticated can read sessions (needed for students to validate QR codes)
+      allow read: if isAuthenticated();
+      
+      // Faculty and Admins can create sessions
+      allow create: if isFaculty() || isAdmin();
+      
+      // Faculty can only update their own sessions (e.g., closing them). Admins can update any.
+      allow update: if (isFaculty() && resource.data.facultyUid == request.auth.uid) || isAdmin();
+      
+      allow delete: if isAdmin();
+    }
+
+    // ATTENDANCE COLLECTION
+    match /attendance/{attendanceId} {
+      // Students can read their own attendance. Faculty/Admins can read all.
+      allow read: if isAuthenticated() && (resource.data.studentUid == request.auth.uid || isFaculty() || isAdmin());
+      
+      // Critical: Prevent duplicate attendance and validate session state natively
+      allow create: if isAuthenticated() 
+                    // 1. Ensure the document ID matches SESSIONID_STUDENTUID exactly to prevent duplicates
+                    && attendanceId == request.resource.data.sessionId + '_' + request.auth.uid
+                    // 2. Ensure they are submitting for themselves
+                    && request.resource.data.studentUid == request.auth.uid
+                    // 3. Ensure the session actually exists and is currently active
+                    && get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.active == true;
+      
+      // Only Faculty and Admins can update/correct attendance records.
+      // Faculty can only update attendance for their own sessions.
+      allow update: if isAdmin() 
+                    || (isFaculty() && get(/databases/$(database)/documents/sessions/$(resource.data.sessionId)).data.facultyUid == request.auth.uid);
+                    
+      allow delete: if isAdmin();
+    }
+    
+    // Legacy support for transition period (optional, can be removed once fully migrated)
+    match /students/{studentId} {
+       allow read, write: if request.auth != null && request.auth.uid == studentId;
+    }
+  }
+}

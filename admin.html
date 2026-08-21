@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MirrorMee - Admin Panel</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container" style="max-width: 900px;">
+        <div class="header">
+            <div>
+                <h2 style="margin: 0; color: #5f6368;">Admin Portal</h2>
+                <div style="font-size: 13px; color: #888; margin-top: 4px;">System Management</div>
+            </div>
+            <button id="logout-btn" class="danger-btn" style="padding: 8px 16px; font-size: 12px; width: auto;">Logout</button>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <!-- Navigation -->
+            <div style="flex: 1; min-width: 200px;">
+                <div style="background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
+                    <div style="padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border); font-weight: bold; color: #5f6368;">Menu</div>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <li><a href="#" class="nav-link active" data-target="users-section" style="display: block; padding: 15px; text-decoration: none; color: var(--primary); border-bottom: 1px solid var(--border); font-weight: 500;">User Management</a></li>
+                        <li><a href="#" class="nav-link" data-target="settings-section" style="display: block; padding: 15px; text-decoration: none; color: #5f6368;">System Settings</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div style="flex: 3; background: white; border-radius: 12px; border: 1px solid var(--border); padding: 20px;">
+                
+                <div id="users-section" class="content-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0;">User Management</h3>
+                        <input type="text" id="user-search" placeholder="Search users by name or email..." style="width: 300px; margin: 0;">
+                    </div>
+                    
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Current Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-list">
+                            <tr><td colspan="4" style="text-align: center; color: #888;">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="settings-section" class="content-section hidden">
+                    <h3 style="margin-top: 0;">System Settings</h3>
+                    <p style="color: #5f6368; font-size: 14px;">Global system configuration can be managed here.</p>
+                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+                    <div style="background: #fff3e0; border: 1px solid #ffe0b2; padding: 15px; border-radius: 8px;">
+                        <h4 style="margin-top: 0; color: #e65100;">Danger Zone</h4>
+                        <button class="danger-btn" style="width: auto;">Purge Old Attendance Records</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #888;">
+        Developed By Suryansh Soni - 26MCA172 & Dhruv Bhavsar - 26MCA024
+    </div>
+
+    <!-- Role Update Modal -->
+    <div id="role-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div style="background: white; padding: 25px; border-radius: 12px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0;">Update User Role</h3>
+            <p style="font-size: 14px; color: #5f6368;">Changing role for <strong id="modal-user-name"></strong></p>
+            
+            <input type="hidden" id="modal-user-id">
+            
+            <label style="font-size: 13px; font-weight: bold; color: #5f6368; display: block; margin: 15px 0 5px;">Select Role</label>
+            <select id="modal-role-select">
+                <option value="student">Student</option>
+                <option value="faculty">Faculty</option>
+                <option value="admin">Admin</option>
+            </select>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="modal-cancel" class="secondary-btn">Cancel</button>
+                <button id="modal-save" style="margin: 10px 0;">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>
