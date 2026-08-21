@@ -20,3 +20,12 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 export { app, auth, db, provider, signInWithPopup, signOut, onAuthStateChanged, doc, setDoc, getDoc, collection, addDoc, query, where, onSnapshot, getDocs, serverTimestamp };
+
+// Register Service Worker for offline caching & reducing data usage
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker registered. Site will use less data!'))
+            .catch(err => console.log('Service Worker registration failed: ', err));
+    });
+}
