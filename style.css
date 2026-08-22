@@ -18,7 +18,9 @@ body {
     margin: 0;
     padding: 20px;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Optionally add min-height: 100vh if you want true vertical centering */
     -webkit-font-smoothing: antialiased;
 }
 
