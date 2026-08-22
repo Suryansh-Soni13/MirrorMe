@@ -1,4 +1,5 @@
 import { auth, db, signOut, onAuthStateChanged, collection, addDoc, query, where, onSnapshot, serverTimestamp } from './firebase-config.js';
+import { allStudentsData } from './studentsData.js';
 
 let currentSessionId = null;
 let unsubscribeAttendance = null;
@@ -73,30 +74,36 @@ function startLiveAttendanceListener(sessionId) {
             attendanceData.push(docSnap.data());
         });
 
-        // Sort automatically by Student ID (e.g. 26MCA001 -> 26MCA190)
-        attendanceData.sort((a, b) => {
-            let idA = (a.studentId || "").toUpperCase();
-            let idB = (b.studentId || "").toUpperCase();
-            if (idA < idB) return -1;
-            if (idA > idB) return 1;
-            return 0;
+        // We map all students to their attendance status
+        const displayData = allStudentsData.map(student => {
+            // Find if student scanned
+            const record = attendanceData.find(a => a.studentId === student.studentId);
+            return {
+                ...student,
+                timestamp: record ? record.timestamp : null,
+                status: record ? 'Present' : 'Absent'
+            };
         });
         
         // Render rows
-        attendanceData.forEach((data) => {
+        displayData.forEach((data) => {
             const tr = document.createElement('tr');
             
-            // Format time safely (handle serverTimestamp delay)
-            let timeStr = "Pending...";
-            if (data.timestamp) {
+            let timeStr = "-";
+            if (data.status === 'Present' && data.timestamp) {
                 const date = data.timestamp.toDate();
                 timeStr = date.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            } else if (data.status === 'Present') {
+                timeStr = "Pending...";
             }
+            
+            const statusColor = data.status === 'Present' ? 'green' : 'red';
             
             tr.innerHTML = `
                 <td style="font-weight: 500;">${data.studentId || '-'}</td>
                 <td>${data.name || '-'}</td>
                 <td><span style="background: #e8f0fe; color: #1967d2; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">${data.division || '-'}</span></td>
+                <td style="color: ${statusColor}; font-weight: bold;">${data.status}</td>
                 <td style="font-family: monospace;">${timeStr}</td>
             `;
             attendanceList.appendChild(tr);
@@ -116,29 +123,25 @@ endSessionBtn.addEventListener('click', () => {
 });
 
 exportCsvBtn.addEventListener('click', () => {
-    if (attendanceData.length === 0) {
-        alert("No attendance data to export yet.");
-        return;
-    }
-    
-    // Create CSV content
+    // Generate CSV for ALL students
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Student ID,Name,Division,Time\n";
+    csvContent += "Student ID,Name,Division,Status,Time\n";
     
-    attendanceData.forEach(row => {
+    allStudentsData.forEach(student => {
+        const record = attendanceData.find(a => a.studentId === student.studentId);
+        const status = record ? 'Present' : 'Absent';
+        
         let timeStr = "";
-        if (row.timestamp) {
-            const d = row.timestamp.toDate();
-            // Accurate timestamp for CSV: YYYY-MM-DD HH:MM:SS
+        if (record && record.timestamp) {
+            const d = record.timestamp.toDate();
             timeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
         }
         
-        // Escape quotes and commas
-        const safeId = `"${row.studentId || ''}"`;
-        const safeName = `"${row.name || ''}"`;
-        const safeDiv = `"${row.division || ''}"`;
+        const safeId = `"${student.studentId || ''}"`;
+        const safeName = `"${student.name || ''}"`;
+        const safeDiv = `"${student.division || ''}"`;
         
-        csvContent += `${safeId},${safeName},${safeDiv},"${timeStr}"\n`;
+        csvContent += `${safeId},${safeName},${safeDiv},"${status}","${timeStr}"\n`;
     });
     
     // Create download link
@@ -149,7 +152,7 @@ exportCsvBtn.addEventListener('click', () => {
     const filename = `Attendance_${activeSubjectEl.innerText.replace(/[^a-z0-9]/gi, '_')}.csv`;
     link.setAttribute("download", filename);
     
-    document.body.appendChild(link); // Required for FF
+    document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 });
